@@ -2,9 +2,10 @@
 python-nagios-helpers
 =====================
 
-python-nagios-helpers A.K.A **naghelp** is a collections of classes for building nagios *Active* plugins.
-It is higly recommended to use `python-textops <http://python-textops.readthedocs.org>`_ 
-to manipulate collected data. 
+python-nagios-helpers A.K.A **naghelp** is a collections of classes for building
+nagios *Active* plugins. It is higly recommended to use
+`python-textops <http://python-textops.readthedocs.org>`_ to manipulate
+collected data. 
 
 Here is an exemple of an active python plugin, create a file linux_fsfull.py::
 
@@ -17,7 +18,9 @@ Here is an exemple of an active python plugin, create a file linux_fsfull.py::
        tcp_ports = '22'
 
        def collect_data(self,data):
-           data.df = Ssh(self.host.ip,self.host.user,self.host.passwd).run('df -h')
+           data.df = Ssh(self.host.ip,
+                         self.host.user,
+                         self.host.passwd).run('df -h')
 
        def parse_data(self,data):
            df = data.df.skip(1)
@@ -37,7 +40,7 @@ To excute manually::
 
    python linux_fsfull.py --ip=127.0.0.1 --user=naghelp --passwd=lgpl
 
-On error, it may return something liek this::
+On error, it may return something like this::
 
    STATUS : CRITICAL:2, WARNING:1, OK:3
    ==================================[  STATUS  ]==================================
@@ -100,4 +103,5 @@ Naghelp will automatically manage some options::
        --name=NAME      Hostname
 
 
-For more information, `Read The Fabulous Manual <http://python-nagios-helpers.readthedocs.org>`_ !
+For more information,
+`Read The Fabulous Manual <http://python-nagios-helpers.readthedocs.org>`_!

@@ -1,26 +1,29 @@
-# -*- coding: utf-8 -*-
-#
-# Création : July 8th, 2015
-#
-# @author: Eric Lapouyade
-#
+"""
+This module provides many functions and classes to collect data remotely and
+locally.
 
-import sys,os
+Creation: 2015-07-08
+
+@author: Eric Lapouyade
+"""
+
+import sys
 import naghelp
-from types import NoneType
-import re
-import traceback
 import hashlib
 from datetime import datetime
 
-__all__ = [ 'ResponseLevel', 'PluginResponse', 'OK', 'WARNING', 'CRITICAL', 'UNKNOWN', 'LevelComment' ]
+
+__all__ = ['ResponseLevel', 'PluginResponse', 'OK', 'WARNING', 'CRITICAL',
+           'UNKNOWN', 'LevelComment']
 
 MAX_PIPE_OUTPUT_LENGTH = 7000
+
 
 class ResponseLevel(object):
     """Object to use when exiting a naghelp plugin
 
-    Instead of using numeric code that may be hard to memorize, predefined objects has be created :
+    Instead of using numeric code that may be hard to memorize, predefined
+    objects have been created:
 
     =====================   =========
     Response level object   exit code
@@ -31,8 +34,8 @@ class ResponseLevel(object):
     UNKNOWN                 3
     =====================   =========
 
-    To exit a plugin with the correct exit code number, one have just to call the :meth:`exit` method
-    of the wanted ResonseLevel object
+    To exit a plugin with the correct exit code number, one have just to call
+    the :meth:`exit` method of the wanted ResponseLevel object
     """
     def __init__(self, name, exit_code):
         self.name = name
@@ -54,7 +57,7 @@ class ResponseLevel(object):
             >>> level.exit_code
             2
         """
-        return '%s (exit_code=%s)' % (self.name,self.exit_code)
+        return '%s (exit_code=%s)' % (self.name, self.exit_code)
 
     def exit(self):
         """This is the official way to exit a naghelp plugin
@@ -67,54 +70,64 @@ class ResponseLevel(object):
         """
         sys.exit(self.exit_code)
 
-OK       = ResponseLevel('OK',0)
-WARNING  = ResponseLevel('WARNING',1)
-CRITICAL = ResponseLevel('CRITICAL',2)
-UNKNOWN  = ResponseLevel('UNKNOWN',3)
+
+OK = ResponseLevel('OK', 0)
+WARNING = ResponseLevel('WARNING', 1)
+CRITICAL = ResponseLevel('CRITICAL', 2)
+UNKNOWN = ResponseLevel('UNKNOWN', 3)
+
 
 class LevelComment(str):
     pass
+
 
 class PluginResponse(object):
     """Response to return to Nagios for a naghelp plugin
 
     Args:
 
-        default_level (:class:`ResponseLevel`): The level to return when no level messages
-            has been added to the response (for exemple when no error has be found).
-            usually it is set to ``OK`` or ``UNKNOWN``
+        default_level (:class:`ResponseLevel`):
+            The level to return when no level messages have been added to the
+            response (for exemple when no error has be found).
+            Usually set to ``OK`` or ``UNKNOWN``
 
     A naghelp response has got many sections :
 
-        * A synopsis (The first line that is directl visible onto Nagios interface)
-        * A body (informations after the first line, only visible in detailed views)
+        * A synopsis (The first line that is directly visible onto Nagios
+          interface)
+        * A body (informations after the first line, only visible in detailed
+          views)
         * Some performance Data
 
     The body itself has got some sub-sections :
 
         * Begin messages (Usually for a title, an introduction ...)
-        * Levels messages, that are automatically splitted into Nagios levels in this order:
+        * Levels messages, that are automatically split into Nagios levels in
+          this order:
 
             * Critical messages
             * Warning messages
-            * Unkown messages
+            * Unknown messages
             * OK messages
 
-        * More messages (Usually to give more information about the monitored host)
-        * End messages (Custom conclusion messages. naghelp :class:`Plugin` use this section
-            to add automatically some informations about the plugin.
+        * More messages (Usually to give more information about the monitored
+          host)
+        * End messages (Custom conclusion messages. naghelp :class:`Plugin` use
+          this section to add automatically some informations about the plugin.
 
     Each section can be updated by adding a message through dedicated methods.
 
-    PluginResponse object takes care to calculate the right ResponseLevel to return to Nagios :
-    it will depend on the Levels messages you will add to the plugin response. For example,
-    if you add one ``OK`` message and one ``WARNING`` message, the response level will be
-    ``WARNING``. if you add again one ``CRITICAL`` message then an ``OK`` message , the response
+    PluginResponse object takes care to calculate the right ResponseLevel to
+    return to Nagios: it will depend on the Levels messages you will add to the
+    plugin response. For example, if you add one ``OK`` message and one
+    ``WARNING`` message, the response level will be ``WARNING``. If you add
+    again one ``CRITICAL`` message then an ``OK`` message, the response
     level will be ``CRITICAL``.
 
-    About the synopsis section : if not manualy set, the PluginResponse class will build one for
-    you : It will be the unique level message if you add only one in the response or a summary
-    giving the number of messages in each level.
+    About the synopsis section : if not manually set, the PluginResponse class
+    will build one for you: It will be the unique level message if you add only
+    one in the response or a summary giving the number of messages in each
+    level.
 
     Examples:
 
@@ -124,12 +137,12 @@ class PluginResponse(object):
         <BLANKLINE>
 
     """
-    def __init__(self,default_level=OK):
+    def __init__(self, default_level=OK):
         self.level = None
         self.default_level = default_level
         self.sublevel = 0
         self.synopsis = None
-        self.level_msgs = { OK:[], WARNING:[], CRITICAL:[], UNKNOWN:[] }
+        self.level_msgs = {OK: [], WARNING: [], CRITICAL: [], UNKNOWN: []}
         self.begin_msgs = []
         self.more_msgs = []
         self.end_msgs = []
@@ -151,9 +164,12 @@ class PluginResponse(object):
             >>> print r.level
             WARNING
         """
-        if not isinstance(level,ResponseLevel):
-            raise Exception('A response level must be an instance of ResponseLevel, Found level=%s (%s).' % (level,type(level)))
-        if self.level in [ None, UNKNOWN ] or level == CRITICAL or self.level == OK and level == WARNING:
+        if not isinstance(level, ResponseLevel):
+            raise Exception('A response level must be an instance of '
+                            'ResponseLevel, Found level=%s (%s).' %
+                            (level, type(level)))
+        if self.level in [None, UNKNOWN] \
+                or level == CRITICAL or self.level == OK and level == WARNING:
             self.level = level
 
     def get_current_level(self):
@@ -187,21 +203,24 @@ class PluginResponse(object):
         From time to time, the CRITICAL status meaning is not detailed enough :
         It may be useful to color it by a sub-level.
         The ``sublevel`` value is not used directly by :class:`PluginResponse`,
-        but by :class:`ActivePlugin` class which adds a ``__sublevel__=<sublevel>`` string
-        in the plugin informations section. This string can be used for external filtering.
+        but by :class:`ActivePlugin` class which adds a
+        ``__sublevel__=<sublevel>`` string in the plugin informations section.
+        This string can be used for external filtering.
 
         Actually, the sublevel meanings are :
 
-        =========  ====================================================================================================
+        =========  =============================================================
         Sub-level  Description
-        =========  ====================================================================================================
+        =========  =============================================================
         0          The plugin is 100% sure there is a critical error
-        1          The plugin was able to contact remote host (ping) but got no answer from agent (timeout,credentials)
-        2          The plugin was unable to contact the remote host, it may be a network issue (firewall, ...)
-        3          The plugin raised an unexpected exception : it should be a bug.
-        =========  ====================================================================================================
+        1          The plugin was able to contact remote host (ping) but got no
+                   answer from agent (timeout,credentials)
+        2          The plugin was unable to contact the remote host, it may be a
+                   network issue (firewall, ...)
+        3          The plugin raised an unexpected exception: it's often a bug.
+        =========  =============================================================
         """
-        if not isinstance(sublevel,int):
+        if not isinstance(sublevel, int):
             raise Exception('A response sublevel must be an integer')
         self.sublevel = sublevel
 
@@ -212,7 +231,7 @@ class PluginResponse(object):
 
             int: sublevel (0,1,2 or 3)
 
-        Exemples:
+        Examples:
 
             >>> r = PluginResponse(OK)
             >>> print r.get_sublevel()
@@ -223,11 +242,10 @@ class PluginResponse(object):
         """
         return self.sublevel
 
-
-    def _reformat_msg(self,msg,*args,**kwargs):
-        if isinstance(msg,(list,tuple)):
+    def _reformat_msg(self, msg, *args, **kwargs):
+        if isinstance(msg, (list, tuple)):
             msg = '\n'.join(msg)
-        elif not isinstance(msg,basestring):
+        elif not isinstance(msg, str):
             msg = str(msg)
         if args:
             msg = msg % args
@@ -235,19 +253,22 @@ class PluginResponse(object):
             msg = msg.format(**kwargs)
         return msg
 
-    def add_begin(self,msg,*args,**kwargs):
-        r"""Add a message in begin section
+    def add_begin(self, msg, *args, **kwargs):
+        r"""Adds a message in begin section.
 
-        You can use this method several times and at any time until the :meth:`send` is used.
-        The messages will be displayed in begin section in the same order as they have been added.
+        You can use this method several times and at any time until the
+        :meth:`send` is used.
+        The messages will be displayed in begin section in the same order as
+        they have been added.
         This method does not change the calculated ResponseLevel.
 
         Args:
 
             msg (str): the message to add in begin section.
-            args (list): if additionnal arguments are given,
-                ``msg`` will be formatted with ``%`` (old-style python string formatting)
-            kwargs (dict): if named arguments are given,
+            args (array, list): if additional arguments are given,
+                ``msg`` will be formatted with ``%``
+                (old-style python string formatting)
+            kwargs (array, dict): if named arguments are given,
                 ``msg`` will be formatted with :meth:`str.format`
 
         Examples:
@@ -256,41 +277,49 @@ class PluginResponse(object):
             >>> r.add_begin('='*40)
             >>> r.add_begin('{hostname:^40}', hostname='MyHost')
             >>> r.add_begin('='*40)
-            >>> r.add_begin('Date : %s, Time : %s','2105-12-18','14:55:11')
+            >>> r.add_begin('Date : %s, Time : %s', '2105-12-18', '14:55:11')
             >>> r.add_begin('\n')
-            >>> r.add(CRITICAL,'This is critical !')
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
+            >>> r.add(CRITICAL, "This is critical!")
+            >>> print(r)     #doctest: +NORMALIZE_WHITESPACE
             This is critical !
             ========================================
                              MyHost
             ========================================
             Date : 2105-12-18, Time : 14:55:11
             <BLANKLINE>
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             This is critical !
             <BLANKLINE>
             <BLANKLINE>
         """
-        naghelp.logger.debug('response -> add_begin("%s") %s',msg,naghelp.debug_caller())
-        self.begin_msgs.append(self._reformat_msg(msg,*args,**kwargs))
+        naghelp.logger.debug('response -> add_begin("%s") %s', msg,
+                             naghelp.debug_caller())
+        self.begin_msgs.append(self._reformat_msg(msg, *args, **kwargs))
 
-    def add(self,level,msg,*args,**kwargs):
-        r"""Add a message in levels messages section and sets the response level at the same time
+    def add(self, level, msg, *args, **kwargs):
+        r"""
+        Adds a message in levels messages section and sets the response level at
+        the same time.
 
-        Use this method each time your plugin detects a WARNING or a CRITICAL error. You can also
-        use this method to add a message saying there is an UNKNOWN or OK state somewhere.
-        You can use this method several times and at any time until the :meth:`send` is used.
+        Use this method each time your plugin detects a WARNING or a CRITICAL
+        error. You can also use this method to add a message saying there is an
+        UNKNOWN or OK state somewhere.
+        You can use this method several times and at any time until the
+        :meth:`send` is used.
         This method updates the calculated ResponseLevel.
-        When the response is rendered, the added messages are splitted into sub-section
+        When the response is rendered, the added messages are split into
+        sub-section
 
         Args:
 
-            level (ResponseLevel): the message level (Will affect the final response level)
+            level (ResponseLevel):
+                the message level (Will affect the final response level)
             msg (str): the message to add in levels messages section.
             args (list): if additional arguments are given,
-                ``msg`` will be formatted with ``%`` (old-style python string formatting)
+                ``msg`` will be formatted with ``%``
+                (old-style python string formatting)
             kwargs (dict): if named arguments are given,
                 ``msg`` will be formatted with :meth:`str.format`
 
@@ -301,47 +330,56 @@ class PluginResponse(object):
             OK
             >>> r.add(CRITICAL,'The system crashed')
             >>> r.add(WARNING,'Found some almost full file system')
-            >>> r.add(UNKNOWN,'Cannot find FAN %s status',0)
-            >>> r.add(OK,'Power {power_id} is ON',power_id=1)
+            >>> r.add(UNKNOWN,'Cannot find FAN %s status', 0)
+            >>> r.add(OK,'Power {power_id} is ON', power_id=1)
             >>> print r.get_current_level()
             CRITICAL
             >>> print r     #doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:1, WARNING:1, UNKNOWN:1, OK:1
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             The system crashed
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             Found some almost full file system
             <BLANKLINE>
-            ----( UNKNOWN )-----------------------------------------------------------------
+            ----( UNKNOWN )----------------------------------------------------
             Cannot find FAN 0 status
             <BLANKLINE>
-            ----( OK )----------------------------------------------------------------------
+            ----( OK )----------------------------------------------------
             Power 1 is ON
             <BLANKLINE>
             <BLANKLINE>
         """
         if not kwargs.get('no_debug'):
-            naghelp.logger.debug('response -> add(%s,"%s") %s',level,msg,naghelp.debug_caller())
-        if isinstance(level,ResponseLevel):
-            self.level_msgs[level].append(self._reformat_msg(msg,*args,**kwargs))
+            naghelp.logger.debug('response -> add(%s,"%s") %s', level, msg,
+                                 naghelp.debug_caller())
+        if isinstance(level, ResponseLevel):
+            self.level_msgs[level].append(
+                self._reformat_msg(msg, *args, **kwargs))
             self.set_level(level)
         else:
-            raise Exception('A response level must be an instance of ResponseLevel, Found level=%s (%s).' % (level,type(level)))
+            raise Exception('A response level must be an instance of '
+                            'ResponseLevel, Found level=%s (%s).' %
+                            (level, type(level)))
 
-    def add_comment(self,level,msg,*args,**kwargs):
-        r"""Add a comment in levels messages section and sets the response level at the same time
+    def add_comment(self, level, msg, *args, **kwargs):
+        r"""
+        Adds a comment in levels messages section and sets the response level
+        at the same time.
 
-        it works like :meth:`add` except that the message is not counted into the synopsis
+        Works like :meth:`add` except that the message is not counted into the
+        synopsis.
 
         Args:
 
-            level (ResponseLevel): the message level (Will affect the final response level)
+            level (ResponseLevel):
+                Message level (affects the final response level)
             msg (str): the message to add in levels messages section.
-            args (list): if additionnal arguments are given,
-                ``msg`` will be formatted with ``%`` (old-style python string formatting)
+            args (list):
+                If additional arguments are given, ``msg`` will be formatted
+                with ``%`` (old-style python string formatting)
             kwargs (dict): if named arguments are given,
                 ``msg`` will be formatted with :meth:`str.format`
 
@@ -355,38 +393,52 @@ class PluginResponse(object):
             >>> r.add(CRITICAL,'error 2')
             >>> print r     #doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             Here are some errors
             error 1
             error 2
             <BLANKLINE>
             <BLANKLINE>
         """
-        naghelp.logger.debug('response -> add_comment(%s,"%s") %s',level,msg,naghelp.debug_caller())
-        if isinstance(level,ResponseLevel):
-            self.level_msgs[level].append(LevelComment(self._reformat_msg(msg,*args,**kwargs)))
+        naghelp.logger.debug('response -> add_comment(%s,"%s") %s', level, msg,
+                             naghelp.debug_caller())
+        if isinstance(level, ResponseLevel):
+            self.level_msgs[level].append(LevelComment(
+                self._reformat_msg(msg, *args, **kwargs)))
         else:
-            raise Exception('A response level must be an instance of ResponseLevel, Found level=%s (%s).' % (level,type(level)))
+            raise Exception('A response level must be an instance of '
+                            'ResponseLevel, Found level=%s (%s).' %
+                            (level, type(level)))
 
-    def add_list(self,level,msg_list,header=None,footer=None,*args,**kwargs):
-        """Add several level messages having a same level
+    def add_list(self, level, msg_list, header=None, footer=None,
+                 *args, **kwargs):
+        """Adds several level messages having a same level.
 
-        Sometimes, you may have to specify a list of faulty parts in the response : this can be done
-        by this method in a single line. If a message is empty in the list, it is not added.
+        Sometimes, you may have to specify a list of faulty parts in the
+        response: this can be done by this method in a single line. If a message
+        is empty in the list, it is not added.
 
         Args:
 
-            level (ResponseLevel): the message level (Will affect the final response level)
-            msg_list (list): the messages list to add in levels messages section.
-            header (str): Displayed before the message as a level comment if not None (Default : None)
-              one can use ``{_len}`` in the comment to get list count.
-            footer (str): Displayed after the message as a level comment if not None (Default : None)
-              one can use ``{_len}`` in the comment to get list count.
-            args (list): if additional arguments are given, messages in ``msg_list``
-                will be formatted with ``%`` (old-style python string formatting)
-            kwargs (dict): if named arguments are given, messages in ``msg_list``
+            level (ResponseLevel):
+                Message level (affects the final response level)
+            msg_list (list): messages list to add in levels messages section
+            header (str):
+                Displayed before the message as a level comment if not None
+                One can use ``{_len}`` in the comment to get list count.
+                Default: None
+            footer (str):
+                Displayed after the message as a level comment if not None.
+                One can use ``{_len}`` in the comment to get list count.
+                Default: None
+            args (list):
+                If additional arguments are given, messages in ``msg_list``
+                will be formatted with ``%``
+                (old-style python string formatting)
+            kwargs (dict):
+                If named arguments are given, messages in ``msg_list``
                 will be formatted with :meth:`str.format`
 
 
@@ -406,36 +458,38 @@ class PluginResponse(object):
             >>> from textops import grep
             >>> criticals = logs >> grep('critical|failed')
             >>> warnings = logs >> grep('degraded|warning')
-            >>> print criticals
+            >>> print(criticals)
             ['Power 0 is critical', 'Power 3 is failed']
-            >>> print warnings
+            >>> print(warnings)
             ['Power 2 is degraded', 'Power 5 is degraded']
             >>> r.add_list(CRITICAL,criticals)
             >>> r.add_list(WARNING,warnings)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             CRITICAL
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
+            >>> print(r)  #doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2, WARNING:2
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
             <BLANKLINE>
 
             >>> r = PluginResponse()
-            >>> r.add_list(WARNING,['Power warning1','Power warning2'],'{_len} Power warnings:','Power warnings : {_len}')
-            >>> r.add_list(WARNING,['CPU warning1','CPU warning2'],'{_len} CPU warnings:','CPU warnings : {_len}')
-            >>> print r
+            >>> r.add_list(WARNING,['Power warning1','Power warning2'],
+            >>>            '{_len} Power warnings:','Power warnings : {_len}')
+            >>> r.add_list(WARNING,['CPU warning1','CPU warning2'],
+            >>>            '{_len} CPU warnings:','CPU warnings : {_len}')
+            >>> print(r)
             STATUS : WARNING:4
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             2 Power warnings:
             Power warning1
             Power warning2
@@ -448,36 +502,44 @@ class PluginResponse(object):
             <BLANKLINE>
         """
 
-        have_added=False
+        have_added = False
         kwargs['_len'] = len(msg_list)
-        naghelp.logger.debug('response -> add_list(...) %s',naghelp.debug_caller())
-        for i,msg in enumerate(msg_list):
-            naghelp.logger.debug('response -> [%s] %s',i,msg)
+        naghelp.logger.debug('response -> add_list(...) %s',
+                             naghelp.debug_caller())
+        for i, msg in enumerate(msg_list):
+            naghelp.logger.debug('response -> [%s] %s', i, msg)
             if msg:
                 if not have_added and header is not None:
-                    self.add_comment(level, header,*args,**kwargs)
-                self.add(level, msg,no_debug=True,*args,**kwargs)
+                    self.add_comment(level, header, *args, **kwargs)
+                self.add(level, msg, no_debug=True, *args, **kwargs)
                 have_added = True
         if have_added and footer is not None:
-            self.add_comment(level, footer,*args,**kwargs)
+            self.add_comment(level, footer, *args, **kwargs)
 
-    def add_mlist(self,levels,lists,headers=[],footers=[],*args,**kwargs):
+    def add_mlist(self, levels, lists, headers=[], footers=[], *args, **kwargs):
         """Add a list of lists of messages
 
-        This is useful with :class:`textops.sgrep` utility that returns lists of lists of messages.
-        first level will be affected to first list, second level to the second list and so on.
+        This is useful with :class:`textops.sgrep` utility that returns lists of
+        lists of messages. First level will be affected to first list, second
+        level to the second list and so on.
 
         Args:
 
-            levels (ResponseLevel): a list of message levels. use a ``None`` level to skip a list.
+            levels (tuple of ResponseLevel): List of message levels.
+                Use a ``None`` level to skip a list.
             lists (list): list of message lists.
-            header (str): Displayed before the message as a level comment if not None (Default : None)
-              one can use ``{_len}`` in the comment to get list count.
-            footer (str): Displayed after the message as a level comment if not None (Default : None)
-              one can use ``{_len}`` in the comment to get list count.
-            args (list): if additional arguments are given, messages in ``msg_list``
-                will be formatted with ``%`` (old-style python string formatting)
-            kwargs (dict): if named arguments are given, messages in ``msg_list``
+            headers (list):
+                If not empty, displayed before the message as a level comment.
+                One can use ``{_len}`` in the comment to get list count.
+            footers (list):
+                If not empty, displayed after the message as a level comment.
+                One can use ``{_len}`` in the comment to get list count.
+            args (list):
+                If additional arguments are given, messages in ``msg_list``
+                will be formatted with ``%``
+                (old-style python string formatting)
+            kwargs (dict):
+                If named arguments are given, messages in ``msg_list``
                 will be formatted with :meth:`str.format`
 
 
@@ -494,62 +556,68 @@ class PluginResponse(object):
             ... Power 5 is degraded
             ... ''')
             >>>
-            >>> print logs.sgrep(('critical|failed','degraded|warning'))  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(logs.sgrep(('critical|failed',
+            >>>                   'degraded|warning')))
             [['Power 0 is critical', 'Power 3 is failed'],
-            ['Power 2 is degraded', 'Power 5 is degraded'],
-            ['', 'Power 1 is OK', 'Power 4 is OK']]
-            >>> r.add_mlist((CRITICAL,WARNING,OK),logs.sgrep(('critical|failed','degraded|warning')))
-            >>> print r                                                   #doctest: +NORMALIZE_WHITESPACE
+             ['Power 2 is degraded', 'Power 5 is degraded'],
+             ['', 'Power 1 is OK', 'Power 4 is OK']]
+            >>> r.add_mlist((CRITICAL, WARNING, OK),
+            >>>             logs.sgrep(('critical|failed','degraded|warning')))
+            >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2, WARNING:2, OK:2
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )-----------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
-            ----( OK )----------------------------------------------------------------------
+            ----( OK )----------------------------------------------------------
             Power 1 is OK
             Power 4 is OK
             <BLANKLINE>
             >>> r = PluginResponse(OK)
-            >>> r.add_mlist((CRITICAL,WARNING,None),logs.sgrep(('critical|failed','degraded|warning')))
-            >>> print r
+            >>> r.add_mlist((CRITICAL, WARNING, None),
+            >>>             logs.sgrep(('critical|failed','degraded|warning')))
+            >>> print(r)
             STATUS : CRITICAL:2, WARNING:2
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
             <BLANKLINE>
         """
-        for i,level in enumerate(levels):
+        for i, level in enumerate(levels):
             if level is not None:
-                msg_list = lists[i] if i<len(lists) else []
-                header = headers[i] if i<len(headers) else None
-                footer = footers[i] if i<len(footers) else None
-                self.add_list(level,msg_list,header,footer,*args,**kwargs)
+                msg_list = lists[i] if i < len(lists) else []
+                header = headers[i] if i < len(headers) else None
+                footer = footers[i] if i < len(footers) else None
+                self.add_list(level, msg_list, header, footer, *args, **kwargs)
 
-    def add_many(self,lst,*args,**kwargs):
-        """Add several level messages NOT having a same level
+    def add_many(self, lst, *args, **kwargs):
+        """Adds several level messages NOT having a same level.
 
-        This works like :meth:`add_list` except that instead of giving a list of messages one have
-        to specify a list of tuples (level,message). By this way, one can give a level to each
-        message into the list. If a message is empty in the list, it is not added.
+        This works like :meth:`add_list` except that instead of giving a list of
+        messages one have to specify a list of tuples (level, message).
+        By this way, one can give a level to each message into the list.
+        If a message is empty in the list, it is not added.
 
         Args:
 
-            lst (list): A list of (level,message) tuples to add in levels messages section.
+            lst (list of tuple): List of (level, message) tuples to add in
+                levels messages section.
             args (list): if additional arguments are given, messages in ``lst``
-                will be formatted with ``%`` (old-style python string formatting)
+                will be formatted with ``%``
+                (old-style python string formatting)
             kwargs (dict): if named arguments are given, messages in ``lst``
                 will be formatted with :meth:`str.format`
 
@@ -567,51 +635,66 @@ class PluginResponse(object):
             ... Power 5 is degraded
             ... '''
             >>> from textops import *
-            >>> errors = [ (CRITICAL if error|haspatterni('critical|failed') else WARNING,error)
-            ...            for error in logs | grepv('OK') ]
-            >>> print errors  #doctest: +NORMALIZE_WHITESPACE
-            [(WARNING, ''), (CRITICAL, 'Power 0 is critical'), (WARNING, 'Power 2 is degraded'),
-            (CRITICAL, 'Power 3 is failed'), (WARNING, 'Power 5 is degraded')]
+            >>> errors = [(CRITICAL
+            >>>           if error | haspatterni('critical|failed')
+            >>>           else WARNING, error)
+            ...           for error in logs | grepv('OK')]
+            >>> print(errors)  # doctest: +NORMALIZE_WHITESPACE
+            [(WARNING, ''), (CRITICAL, 'Power 0 is critical'),
+             (WARNING, 'Power 2 is degraded'),
+             (CRITICAL, 'Power 3 is failed'),
+             (WARNING, 'Power 5 is degraded')]
             >>> r.add_many(errors)
             >>> print r.get_current_level()
             CRITICAL
             >>> print r     #doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2, WARNING:2
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
             <BLANKLINE>
         """
-        naghelp.logger.debug('response -> add_many(...) %s',naghelp.debug_caller())
-        for i,(level,msg) in enumerate(lst):
-            naghelp.logger.debug('response -> [%s] (%s,"%s")',i,level,msg)
+        naghelp.logger.debug('response -> add_many(...) %s',
+                             naghelp.debug_caller())
+        for i, (level, msg) in enumerate(lst):
+            naghelp.logger.debug('response -> [%s] (%s,"%s")', i, level, msg)
             if msg:
-                self.add(level, msg,*args,**kwargs)
+                self.add(level, msg, *args, **kwargs)
 
-    def add_if(self, test, level, msg=None, header=None,footer=None, *args,**kwargs):
-        r"""Test than add a message in levels messages section and sets the response level at the same time
+    def add_if(self, test, level, msg=None, header=None, footer=None,
+               *args, **kwargs):
+        r"""
+        Tests then adds a message in levels messages section and sets the
+        response level at the same time.
 
-        This works like :meth:`add` except that it is conditionnal : ``test`` must be True.
+        Works like :meth:`add` except that it is conditional:
+        ``test`` must be True.
         If no message is given, the value of ``test`` is used.
 
         Args:
 
-            test (any): the message is added to the response only if bool(test) is True.
-            level (ResponseLevel): the message level (Will affect the final response level)
+            test (any): If True, the message is added to the response.
+            level (ResponseLevel):
+                Message level (affects the final response level)
             msg (str): the message to add in levels messages section.
                 If no message is given, the value of test is used.
-            header (str): Displayed before the message as a level comment if not None (Default : None)
-            footer (str): Displayed after the message as a level comment if not None (Default : None)
-            args (list): if additional arguments are given,
-                ``msg`` will be formatted with ``%`` (old-style python string formatting)
-            kwargs (dict): if named arguments are given,
+            header (str):
+                Displayed before the message as a level comment
+                if not None (Default: None)
+            footer (str):
+                Displayed after the message as a level comment
+                if not None (Default: None)
+            args (list): If additional arguments are given,
+                ``msg`` will be formatted with ``%``
+                (old-style python string formatting)
+            kwargs (dict): If named arguments are given,
                 ``msg`` will be formatted with :meth:`str.format`
 
         Examples:
@@ -629,58 +712,63 @@ class PluginResponse(object):
             ... '''
             >>> from textops import *
             >>> nb_criticals = logs | grepc('critical|failed')
-            >>> print nb_criticals
+            >>> print(nb_criticals)
             2
-            >>> warnings = logs | grep('degraded|warning').tostr()
-            >>> print warnings
+            >>> warnings = logs or grep('degraded|warning').tostr()
+            >>> print(warnings)
             Power 2 is degraded
             Power 5 is degraded
-            >>> unknowns = logs | grep('unknown').tostr()
-            >>> print unknowns
+            >>> unknowns = logs or grep('unknown').tostr()
+            >>> print(unknowns)
             <BLANKLINE>
-            >>> r.add_if(nb_criticals,CRITICAL,'{n} power(s) are critical',n=nb_criticals)
-            >>> r.add_if(warnings,WARNING)
-            >>> r.add_if(unknowns,UNKNOWN)
-            >>> print r.get_current_level()
+            >>> r.add_if(nb_criticals, CRITICAL, '{n} power(s) are critical',
+            >>>          n=nb_criticals)
+            >>> r.add_if(warnings, WARNING)
+            >>> r.add_if(unknowns, UNKNOWN)
+            >>> print(r.get_current_level())
             CRITICAL
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
+            >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:1, WARNING:1
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             2 power(s) are critical
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
             <BLANKLINE>
         """
-        naghelp.logger.debug('response -> add_if(%s,%s,"%s") %s',test,level,msg,naghelp.debug_caller())
+        naghelp.logger.debug('response -> add_if(%s,%s,"%s") %s',
+                             test, level, msg, naghelp.debug_caller())
         if msg is None:
             msg = test
-        if isinstance(level,ResponseLevel):
+        if isinstance(level, ResponseLevel):
             if test:
                 if header is not None:
-                    self.add_comment(level, header,*args,**kwargs)
-                self.add(level,msg,*args,**kwargs)
+                    self.add_comment(level, header, *args, **kwargs)
+                self.add(level, msg, *args, **kwargs)
                 if footer is not None:
-                    self.add_comment(level, footer,*args,**kwargs)
+                    self.add_comment(level, footer, *args, **kwargs)
                 self.set_level(level)
         else:
-            raise Exception('A response level must be an instance of ResponseLevel, Found level=%s (%s).' % (level,type(level)))
+            raise Exception('A response level must be an instance of '
+                            'ResponseLevel, Found level=%s (%s).' %
+                            (level, type(level)))
 
-    def add_elif(self,*add_ifs,**kwargs):
-        r"""Multi-conditionnal message add
+    def add_elif(self, *add_ifs, **kwargs):
+        r"""Multi-conditional messages adding.
 
-        This works like :meth:`add_if` except that it accepts multiple tests.
-        Like python ``elif``, the method stops on first True test and send corresponding message.
-        If you want to build the equivalent of a *default* message, just use ``True`` as the last
-        test.
+        Works like :meth:`add_if` except that it accepts multiple tests.
+        Like python ``elif``, the method stops on first True test and send
+        corresponding message.
+        If you want to build the equivalent of a *default* message,
+        just use ``True`` as the last test.
 
         Args:
 
-            add_ifs (list): list of tuple (test,level,message).
+            add_ifs (tuples): list of tuple (test, level, message).
             kwargs (dict): if named arguments are given,
                 messages will be formatted with :meth:`str.format`
 
@@ -700,88 +788,101 @@ class PluginResponse(object):
             ... '''
             >>> from textops import *
             >>> for log in logs | rmblank():
-            ...     r.add_elif( (log|haspattern('critical|failed'), CRITICAL, log),
-            ...                 (log|haspattern('degraded|warning'), WARNING, log),
-            ...                 (log|haspattern('OK'), OK, log),
-            ...                 (True, UNKNOWN, log) )
-            >>> print r.get_current_level()
+            ...     r.add_elif((log | haspattern('critical|failed'),
+            ...                 CRITICAL, log),
+            ...                (log | haspattern('degraded|warning'),
+            ...                 WARNING, log),
+            ...                (log | haspattern('OK'),
+            ...                 OK, log),
+            ...                (True, UNKNOWN, log))
+            >>> print(r.get_current_level())
             CRITICAL
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
+            >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2, WARNING:2, UNKNOWN:1, OK:2
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
-            ----( UNKNOWN )-----------------------------------------------------------------
+            ----( UNKNOWN )----------------------------------------------------
             Power 6 is smoking
             <BLANKLINE>
-            ----( OK )----------------------------------------------------------------------
+            ----( OK )---------------------------------------------------
             Power 1 is OK
             Power 4 is OK
             <BLANKLINE>
             <BLANKLINE>
         """
-        naghelp.logger.debug('response -> add_elif(...) %s',naghelp.debug_caller())
-        for i,(test,level,msg) in enumerate(add_ifs):
-            naghelp.logger.debug('response -> [%s] (%s,%s,"%s")',i,test,level,msg)
+        naghelp.logger.debug('response -> add_elif(...) %s', 
+                             naghelp.debug_caller())
+        for i, (test, level, msg) in enumerate(add_ifs):
+            naghelp.logger.debug('response -> [%s] (%s,%s,"%s")', 
+                                 i, test, level, msg)
             if msg is None:
                 msg = test
-            if isinstance(level,ResponseLevel):
+            if isinstance(level, ResponseLevel):
                 if test:
-                    self.add(level,msg,**kwargs)
+                    self.add(level, msg, **kwargs)
                     self.set_level(level)
                     break
             else:
-                raise Exception('A response level must be an instance of ResponseLevel, Found level=%s (%s).' % (level,type(level)))
+                raise Exception('A response level must be an instance of '
+                                'ResponseLevel, Found level=%s (%s).' % 
+                                (level, type(level)))
 
-    def add_more(self,msg,*args,**kwargs):
-        r"""Add a message in "more messages" section (aka "Additionnal informations")
+    def add_more(self, msg, *args, **kwargs):
+        r"""
+        Adds a message in "more messages" section (aka "Additional 
+        informations").
 
-        You can use this method several times and at any time until the :meth:`send` is used.
-        The messages will be displayed in the section in the same order as they have been added.
+        You can use this method several times and at any time until the 
+        :meth:`send` is used.
+        The messages will be displayed in the section in the same order as they 
+        have been added.
         This method does not change the calculated ResponseLevel.
 
         Args:
 
             msg (str): the message to add in end section.
-            args (list): if additional arguments are given,
-                ``msg`` will be formatted with ``%`` (old-style python string formatting)
-            kwargs (dict): if named arguments are give,
+            args (array, list): if additional arguments are given,
+                ``msg`` will be formatted with ``%`` 
+                (old-style python string formatting)
+            kwargs (array, dict): if named arguments are give,
                 ``msg`` will be formatted with :meth:`str.format`
 
         Note:
 
-            The "Additionnal informations" section title will be added automatically if the section is
-            not empty.
+            The "Additional informations" section title will be added 
+            automatically if the section is not empty.
 
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> r.add(CRITICAL,'This is critical !')
-            >>> r.add_more('Date : %s, Time : %s','2105-12-18','14:55:11')
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
-            This is critical !
-            ==================================[  STATUS  ]==================================
+            >>> r.add(CRITICAL,'This is critical!')
+            >>> r.add_more('Date : %s, Time : %s', '2105-12-18', '14:55:11')
+            >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
+            This is critical!
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
-            This is critical !
+            ----( CRITICAL )----------------------------------------------------
+            This is critical!
             <BLANKLINE>
-            ==========================[ Additionnal informations ]==========================
+            ====================[ Additional informations ]=====================
             Date : 2105-12-18, Time : 14:55:11
         """
         if not kwargs.get('no_debug'):
-            naghelp.logger.debug('response -> add_more("%s") %s',msg,naghelp.debug_caller())
+            naghelp.logger.debug('response -> add_more("%s") %s',
+                                 msg, naghelp.debug_caller())
 
         if msg:
-            if isinstance(msg,(list,tuple)):
+            if isinstance(msg, (list, tuple)):
                 msg = '\n'.join(msg)
-            elif not isinstance(msg,basestring):
+            elif not isinstance(msg, str):
                 msg = str(msg)
             if args:
                 msg = msg % args
@@ -789,19 +890,23 @@ class PluginResponse(object):
                 msg = msg.format(**kwargs)
             self.more_msgs.append(msg)
 
-    def add_end(self,msg,*args,**kwargs):
+    def add_end(self, msg, *args, **kwargs):
         r"""Add a message in end section
 
-        You can use this method several times and at any time until the :meth:`send` is used.
-        The messages will be displayed in end section in the same order as they have been added.
+        You can use this method several times and at any time until the
+        :meth:`send` is used.
+        The messages will be displayed in end section in the same order as they
+        have been added.
         This method does not change the calculated ResponseLevel.
 
         Args:
 
             msg (str): the message to add in end section.
-            args (list): if additional arguments are given,
-                ``msg`` will be formatted with ``%`` (old-style python string formatting)
-            kwargs (dict): if named arguments are give,
+            args (array, list):
+                If additional arguments are given,
+                ``msg`` will be formatted with ``%``
+                (old-style python string formatting)
+            kwargs (array, dict): if named arguments are give,
                 ``msg`` will be formatted with :meth:`str.format`
 
         Examples:
@@ -810,15 +915,15 @@ class PluginResponse(object):
             >>> r.add_end('='*40)
             >>> r.add_end('{hostname:^40}', hostname='MyHost')
             >>> r.add_end('='*40)
-            >>> r.add_end('Date : %s, Time : %s','2105-12-18','14:55:11')
+            >>> r.add_end('Date : %s, Time : %s', '2105-12-18', '14:55:11')
             >>> r.add_end('\n')
             >>> r.add(CRITICAL,'This is critical !')
             >>> print r     #doctest: +NORMALIZE_WHITESPACE
             This is critical !
             <BLANKLINE>
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             This is critical !
             <BLANKLINE>
             <BLANKLINE>
@@ -827,10 +932,11 @@ class PluginResponse(object):
             ========================================
             Date : 2105-12-18, Time : 14:55:11
         """
-        naghelp.logger.debug('response -> add_more("%s") %s',msg,naghelp.debug_caller())
-        if isinstance(msg,(list,tuple)):
+        naghelp.logger.debug('response -> add_more("%s") %s',
+                             msg, naghelp.debug_caller())
+        if isinstance(msg, (list, tuple)):
             msg = '\n'.join(msg)
-        elif not isinstance(msg,basestring):
+        elif not isinstance(msg, str):
             msg = str(msg)
         if args:
             msg = msg % args
@@ -838,75 +944,83 @@ class PluginResponse(object):
             msg = msg.format(**kwargs)
         self.end_msgs.append(msg)
 
-
-    def add_perf_data(self,data):
-        r"""Add performance object into the response
+    def add_perf_data(self, data):
+        r"""Adds performance object into the response.
 
         Args:
 
-            data (str or :class:`~naghelp.PerfData`): the perf data string or PerfData object to add to
-                the response. Have a look to
-                `Performance data string syntax <http://nagios-plugins.org/doc/guidelines.html#AEN200>`_.
+            data (str or :class:`~naghelp.PerfData`):
+                The perf data string or PerfData object to add to the response.
+                See
+                `here <http://nagios-plugins.org/doc/guidelines.html#AEN200>`_.
 
         Examples:
 
+            >>> from naghelp import PerfData
             >>> r = PluginResponse(OK)
             >>> r.add_begin('Begin\n')
             >>> r.add_end('End')
-            >>> r.add_perf_data(PerfData('filesystem_/','55','%','95','98','0','100'))
-            >>> r.add_perf_data(PerfData('filesystem_/usr','34','%','95','98','0','100'))
+            >>> r.add_perf_data(PerfData('filesystem_/', '55', '%', '95', '98',
+            >>>                          '0','100'))
+            >>> r.add_perf_data(PerfData('filesystem_/usr', '34', '%', '95',
+            >>>                          '98', '0', '100'))
             >>> r.add_perf_data('cpu_wait=88%;40;60;0;100')
             >>> r.add_perf_data('cpu_user=12%;80;95;0;100')
-            >>> print r
+            >>> print(r)
             OK|filesystem_/=55%;95;98;0;100
             Begin
-            End| filesystem_/usr=34%;95;98;0;100 cpu_wait=88%;40;60;0;100 cpu_user=12%;80;95;0;100
+            End| filesystem_/usr=34%;95;98;0;100 cpu_wait=88%;40;60;0;100
+            cpu_user=12%;80;95;0;100
         """
-        naghelp.logger.debug('response -> add_perf_data("%s") %s',data,naghelp.debug_caller())
-        if not isinstance(data,basestring):
+        naghelp.logger.debug('response -> add_perf_data("%s") %s',
+                             data, naghelp.debug_caller())
+        if not isinstance(data, str):
             data = str(data)
         self.perf_items.append(data)
 
-    def set_synopsis(self,msg,*args,**kwargs):
+    def set_synopsis(self, msg, *args, **kwargs):
         r"""Sets the response synopsis.
 
-        By default, if no synopsis has been set manually, the response synopsis (first line of
-        the text returned by the plugin) will be :
+        By default, if no synopsis has been set manually, the response synopsis
+        (first line of the text returned by the plugin) will be:
 
             * The error message if there is only one level message
-            * Otherwise, some statistics like : ``STATUS : CRITICAL:2, WARNING:2, UNKNOWN:1, OK:2``
+            * Otherwise, some statistics like:
+              ``STATUS : CRITICAL:2, WARNING:2, UNKNOWN:1, OK:2``
 
-        If something else is wanted, one can define a custom synopsis with this method.
+        If something else is wanted, one can define a custom synopsis
+        with this method.
 
         Args:
 
             msg (str): the synopsis.
             args (list): if additional arguments are given,
-                ``msg`` will be formatted with ``%`` (old-style python string formatting)
+                ``msg`` will be formatted with ``%``
+                (old-style python string formatting)
             kwargs (dict): if named arguments are give,
                 ``msg`` will be formatted with :meth:`str.format`
 
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> r.add(CRITICAL,'This is critical !')
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
-            This is critical !
-            ==================================[  STATUS  ]==================================
+            >>> r.add(CRITICAL,'This is critical!')
+            >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
+            This is critical!
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
-            This is critical !
+            ----( CRITICAL )----------------------------------------------------
+            This is critical!
             <BLANKLINE>
             >>> r.set_synopsis('Mayday, Mayday, Mayday')
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
+            >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
             Mayday, Mayday, Mayday
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             This is critical !
             <BLANKLINE>
         """
-        if not isinstance(msg,basestring):
+        if not isinstance(msg, str):
             msg = str(msg)
         if args:
             msg = msg % args
@@ -917,41 +1031,52 @@ class PluginResponse(object):
     def get_default_synopsis(self):
         """Returns the default synopsis
 
-        This method is called if no synopsis has been set manually, the response synopsis (first line of
-        the text returned by the plugin) will be :
+        This method is called if no synopsis has been set manually, the response
+        synopsis (first line of the text returned by the plugin) will be:
 
             * The error message if there is only one level message
-            * Otherwise, some statistics like : ``STATUS : CRITICAL:2, WARNING:2, UNKNOWN:1, OK:2``
+            * Otherwise, some statistics like:
+              ``STATUS : CRITICAL:2, WARNING:2, UNKNOWN:1, OK:2``
 
-        If you want to have a different default synopsis, you can subclass the :class:`PluginResponse`
-        class and redefine this method.
+        If you want to have a different default synopsis, you can subclass the
+        :class:`PluginResponse` class and redefine this method.
 
         Examples:
             >>> r = PluginResponse(OK)
-            >>> r.add(CRITICAL,'This is critical !')
+            >>> r.add(CRITICAL, 'This is critical!')
             >>> print r.get_default_synopsis()
-            This is critical !
-            >>> r.add(WARNING,'This is just a warning.')
+            This is critical!
+            >>> r.add(WARNING, 'This is just a warning.')
             >>> print r.get_default_synopsis()
             STATUS : CRITICAL:1, WARNING:1
         """
-        not_comment = lambda s:not isinstance(s, LevelComment)
-        nb_ok = len(filter(not_comment,self.level_msgs[OK]))
-        nb_nok = len(filter(not_comment,self.level_msgs[WARNING])) + len(filter(not_comment,self.level_msgs[CRITICAL])) + len(filter(not_comment,self.level_msgs[UNKNOWN]))
+        not_comment = lambda s: not isinstance(s, LevelComment)
+        nb_ok = len(list(filter(not_comment, self.level_msgs[OK])))
+        nb_nok = len(list(filter(not_comment, self.level_msgs[WARNING]))) + \
+            len(list(filter(not_comment, self.level_msgs[CRITICAL]))) + \
+            len(list(filter(not_comment, self.level_msgs[UNKNOWN])))
         if nb_ok + nb_nok == 0:
             return str(self.level or self.default_level or UNKNOWN)
         if nb_ok and not nb_nok:
             return str(OK)
         if nb_nok == 1:
-            return filter(not_comment,self.level_msgs[WARNING] + self.level_msgs[CRITICAL] + self.level_msgs[UNKNOWN])[0]
-        return 'STATUS : ' + ', '.join([ '%s:%s' % (level,len(filter(not_comment,self.level_msgs[level]))) for level in [CRITICAL, WARNING, UNKNOWN, OK ] if self.level_msgs[level] ])
+            return list(filter(not_comment, self.level_msgs[WARNING] +
+                               self.level_msgs[CRITICAL] +
+                               self.level_msgs[UNKNOWN]))[0]
+        return 'STATUS : ' + ', '.join(
+            ['%s:%s' %
+             (level, len(list(filter(not_comment, self.level_msgs[level]))))
+             for level in [CRITICAL, WARNING, UNKNOWN, OK]
+             if self.level_msgs[level]]
+        )
 
-    def section_format(self,title):
+    def section_format(self, title):
         """Returns the section title string
 
-        This method is automatically called when the response is rendered by :meth:`get_outpout`.
-        If you want to have a different output, you can subclass the :class:`PluginResponse`
-        class and redefine this method.
+        This method is automatically called when the response is rendered by
+        :meth:`get_output`.
+        If you want to have a different output, you can subclass the
+        :class:`PluginResponse` class and redefine this method.
 
         Args:
 
@@ -959,22 +1084,23 @@ class PluginResponse(object):
 
         Returns:
 
-            str: The foramtted section title
+            str: The formatted section title
 
         Example:
 
             >>> r = PluginResponse(OK)
             >>> print r.section_format('My section')
-            =================================[ My section ]=================================
+            ===========================[ My section ]===========================
         """
         return '{0:=^80}'.format('[ {0:^8} ]'.format(title))
 
-    def subsection_format(self,title):
-        """Returns the subsection title string
+    def subsection_format(self, title):
+        """Returns the subsection title string.
 
-        This method is automatically called when the response is rendered by :meth:`get_outpout`.
-        If you want to have a different output, you can subclass the :class:`PluginResponse`
-        class and redefine this method.
+        This method is automatically called when the response is rendered by
+        :meth:`get_output`.
+        If you want to have a different output, you can subclass the 
+        :class:`PluginResponse` class and redefine this method.
 
         Args:
 
@@ -982,46 +1108,47 @@ class PluginResponse(object):
 
         Returns:
 
-            str: The foramtted subsection title
+            str: The formatted subsection title
 
         Example:
 
             >>> r = PluginResponse(OK)
             >>> print r.subsection_format('My subsection')
-            ----( My subsection )-----------------------------------------------------------
+            ----( My subsection )-----------------------------------------------
         """
         return '----' + '{0:-<76}'.format('( %s )' % title)
 
     def level_msgs_render(self):
-        """Renders level messages
+        """Renders level messages.
 
-        This method is automatically called when the response is rendered by :meth:`get_outpout`.
-        If you want to have a different output, you can subclass the :class:`PluginResponse`
-        class and redefine this method.
+        This method is automatically called when the response is rendered by
+        :meth:`get_output`.
+        If you want to have a different output, you can subclass the
+        :class:`PluginResponse` class and redefine this method.
 
         Returns:
 
-            str: The foramtted level messages
+            str: The formatted level messages
 
         Example:
 
             >>> r = PluginResponse(OK)
-            >>> r.add(CRITICAL,'This is critical !')
+            >>> r.add(CRITICAL,'This is critical!')
             >>> r.add(WARNING,'This is just a warning.')
-            >>> print r.level_msgs_render()
-            ==================================[  STATUS  ]==================================
+            >>> print(r.level_msgs_render())
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
-            This is critical !
+            ----( CRITICAL )----------------------------------------------------
+            This is critical!
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             This is just a warning.
             <BLANKLINE>
             <BLANKLINE>
         """
         out = self.section_format('STATUS') + '\n'
         have_status = False
-        for level in [CRITICAL, WARNING, UNKNOWN, OK ]:
+        for level in [CRITICAL, WARNING, UNKNOWN, OK]:
             msgs = self.level_msgs[level]
             if msgs:
                 have_status = True
@@ -1035,12 +1162,14 @@ class PluginResponse(object):
         out += '\n'
         return out
 
-    def escape_msg(self,msg):
+    def escape_msg(self, msg):
         """Escapes forbidden chars in messages
 
-        Nagios does not accept the pipe symbol in messages because it is a separator for performance
-        data. This method escapes or replace such forbidden chars.
-        Default behaviour is to replace the pipe ``|`` by an exclamation mark ``!``.
+        Nagios does not accept the pipe symbol in messages because it is a
+        separator for performance data. This method escapes or replace such
+        forbidden chars.
+        Default behaviour is to replace the pipe ``|`` by an exclamation
+        mark ``!``.
 
         Args:
 
@@ -1050,14 +1179,14 @@ class PluginResponse(object):
 
             str : The escaped message
         """
-        return msg.replace('|','!')
+        return msg.replace('|', '!')
 
-    def get_output(self,body_max_length=None):
+    def get_output(self, body_max_length=None):
         r"""Renders the whole response following the Nagios syntax
 
-        This method is automatically called when the response is sent by :meth:`send`.
-        If you want to have a different output, you can subclass the :class:`PluginResponse`
-        class and redefine this method.
+        This method is automatically called when the response is sent by
+        :meth:`send`. If you want to have a different output, you can subclass
+        the :class:`PluginResponse` class and redefine this method.
 
         Returns:
 
@@ -1065,35 +1194,36 @@ class PluginResponse(object):
 
         Note:
 
-            As ``__str__`` directly calls :meth:`get_output`, printing a :class:`PluginResponse`
-            object is equivalent to call :meth:`get_output`.
+            As ``__str__`` directly calls :meth:`get_output`, printing a
+            :class:`PluginResponse` object is equivalent to call
+            :meth:`get_output`.
 
         Example:
 
             >>> r = PluginResponse(OK)
-            >>> r.add(CRITICAL,'This is critical !')
+            >>> r.add(CRITICAL,'This is critical!')
             >>> r.add(WARNING,'This is just a warning.')
 
-            >>> print r.get_output()
+            >>> print(r.get_output())
             STATUS : CRITICAL:1, WARNING:1
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             This is critical !
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             This is just a warning.
             <BLANKLINE>
             <BLANKLINE>
 
             >>> print r
             STATUS : CRITICAL:1, WARNING:1
-            ==================================[  STATUS  ]==================================
+            ============================[  STATUS  ]============================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------
             This is critical !
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------------------
+            ----( WARNING )----------------------------------------------------
             This is just a warning.
             <BLANKLINE>
             <BLANKLINE>
@@ -1104,46 +1234,54 @@ class PluginResponse(object):
         synopsis_first_line = synopsis_lines[0]
         synopsis_start = synopsis_first_line[:synopsis_maxlen]
 
-        if synopsis_first_line[synopsis_maxlen:] or len(synopsis_lines)>1:
+        if synopsis_first_line[synopsis_maxlen:] or len(synopsis_lines) > 1:
             synopsis_start += '...'
 
         out = self.escape_msg(synopsis_start)
         out += '|%s\n' % self.perf_items[0] if self.perf_items else '\n'
 
         if synopsis_first_line[synopsis_maxlen:]:
-            out += '... %s\n' % self.escape_msg(synopsis_first_line[synopsis_maxlen:])
+            out += '... %s\n' % \
+                   self.escape_msg(synopsis_first_line[synopsis_maxlen:])
 
         body = '\n'.join(self.begin_msgs)
         body += self.level_msgs_render()
         if self.more_msgs:
-            body += self.section_format('Additionnal informations') + '\n'
+            body += self.section_format('Additional informations') + '\n'
             body += '\n'.join(self.more_msgs)
 
         if body_max_length and len(body) > body_max_length:
-            body = body[:body_max_length] + '...\n\n--- Message is too big for nagios : it has been truncated ---\n\n'
+            body = body[:body_max_length] + \
+                   '...\n\n' \
+                   '--- Message is too big for nagios: ' \
+                   'it has been truncated ---\n\n'
 
         body += '\n'.join(self.end_msgs)
 
         out += self.escape_msg(body)
-        out += '|%s' % ' ' + ' '.join(self.perf_items[1:]) if len(self.perf_items)>1 else ''
+        out += '|%s' % ' ' + ' '.join(self.perf_items[1:]) \
+            if len(self.perf_items) > 1 else ''
         return out
 
     def __str__(self):
         return self.get_output()
 
     def get_hash(self):
-        return hashlib.md5(self.get_output()).hexdigest()
+        return hashlib.md5(self.get_output().encode("utf8")).hexdigest()
 
-    def send(self, level=None, synopsis='', msg='', sublevel=None, nagios_host=None, nagios_svc=None, nagios_cmd=None):
-        r"""Send the response to Nagios
+    def send(self, level=None, synopsis='', msg='', sublevel=None,
+             nagios_host=None, nagios_svc=None, nagios_cmd=None):
+        r"""Sends the response to Nagios.
 
-        This method is automatically called by :meth:`naghelp.ActivePlugin.run` method and
-        follow these steps :
+        This method is automatically called by :meth:`naghelp.ActivePlugin.run`
+        method and follow these steps :
 
-            * if defined, force a level, a sublevel, a synopsis or add a last message
+            * if defined, force a level, a sublevel, a synopsis or add a last
+              message
             * render the response string following the Nagios syntax
             * display the string on stdout
-            * exit the plugin with the exit code corresponding to the response level.
+            * exit the plugin with the exit code corresponding to the response
+              level.
 
         Args:
 
@@ -1153,19 +1291,21 @@ class PluginResponse(object):
             sublevel(int): force a sublevel [0-3] (optional),
             nagios_host (str): nagios hostname (only for passive response)
             nagios_svc (str): nagios service (only for passive response)
-            nagios_cmd (str or pynag obj): if None, the response goes to stdout : this is for
-                active plugin. if string the response is sent to the corresponding file for debug.
-                if it is a pynag cmd object, the response is sent to the nagios pipe for
-                host ``nagios_host`` and for service ``nagios_svc`` : this is for a passive plugin.
+            nagios_cmd (str or pynag obj):
+                If None, the response goes to stdout: this is for active plugin.
+                If string the response is sent to the corresponding file for
+                debug. If it is a pynag cmd object, the response is sent to the
+                nagios pipe for host ``nagios_host`` and for service
+                ``nagios_svc``: this is for a passive plugin.
         """
-        if isinstance(level,ResponseLevel):
+        if isinstance(level, ResponseLevel):
             self.set_level(level)
         if self.level is None:
             self.level = self.default_level or UNKNOWN
         if synopsis:
             self.synopsis = synopsis
         if msg:
-            self.add(level,msg)
+            self.add(level, msg)
         if sublevel is not None:
             self.set_sublevel(sublevel)
 
@@ -1173,22 +1313,33 @@ class PluginResponse(object):
 
         out = self.get_output(MAX_PIPE_OUTPUT_LENGTH if nagios_cmd else None)
 
-        naghelp.logger.debug('Plugin output :\n' + '#' * 80 + '\n' + out + '\n'+ '#' * 80)
-
+        naghelp.logger.debug('Plugin output :\n' +
+                             '#' * 80 + '\n' + out + '\n' +
+                             '#' * 80)
         if nagios_cmd:
-            # if nagios_cmd is a string, response will be added into the specified file (useful for testing)
-            if isinstance(nagios_cmd,basestring):
-                naghelp.logger.debug('Sending response for %s/%s in file %s ...',nagios_host,nagios_svc,nagios_cmd)
-                with open(nagios_cmd,'w+') as fh:
+            # if nagios_cmd is a string, response will be added into the
+            # specified file (useful for testing)
+            if isinstance(nagios_cmd, str):
+                naghelp.logger.debug(
+                    'Sending response for %s/%s in file %s ...',
+                    nagios_host, nagios_svc, nagios_cmd)
+                with open(nagios_cmd, 'w+') as fh:
                     fh.write('='*80)
-                    fh.write('[%s] Response for %s/%s' % (datetime.now(),nagios_host,nagios_svc))
+                    fh.write('[%s] Response for %s/%s' %
+                             (datetime.now(), nagios_host, nagios_svc))
                     fh.write('-'*80)
                     fh.write(out)
             else:
-                naghelp.logger.debug('Sending response to command pipe for %s/%s ...',nagios_host,nagios_svc)
-                nagios_cmd.process_service_check_result(nagios_host,nagios_svc,self.level.exit_code,out.replace('\n',r'\n'))
+                naghelp.logger.debug(
+                    'Sending response to command pipe for %s/%s ...',
+                    nagios_host, nagios_svc)
+                nagios_cmd.process_service_check_result(
+                    nagios_host, nagios_svc, self.level.exit_code,
+                    out.replace('\n', r'\n'))
         else:
             naghelp.logger.debug('Sending response on stdout...')
-            print out.encode('utf-8') if isinstance(out,unicode) else out
-            naghelp.logger.info('Exiting plugin with response level : %s, __sublevel__=%s', self.level.info(), self.sublevel )
+            print(out.encode('utf-8') if isinstance(out, str) else out)
+            naghelp.logger.info('Exiting plugin with response level: '
+                                '%s, __sublevel__=%s',
+                                self.level.info(), self.sublevel)
             self.level.exit()

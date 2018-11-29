@@ -9,17 +9,19 @@
 How to build an active plugin
 =============================
 
-An Nagios active plugin is a script that is triggered by Nagios which is waiting 2 things :
+An Nagios active plugin is a script that is triggered by Nagios which is waiting
+2 things :
 
    * A message on the standard output.
    * An exit code giving the error level.
 
-A passive plugin is a script that is NOT triggered by Nagios, but by external mechanism like event
-handlers (syslog handlers), crontabs, mails, snmp traps etc... These plugins send message and error
-level through a dedicated Nagios pipe.
+A passive plugin is a script that is NOT triggered by Nagios, but by external
+mechanism like event handlers (syslog handlers), crontabs, mails, snmp traps
+etc...
+These plugins send message and error level through a dedicated Nagios pipe.
 
-Naghelp actually manages only **active** plugins. We plan to extend the framework to passive plugins
-later.
+Naghelp actually manages only **active** plugins. We plan to extend the
+framework to passive plugins later.
 
 Naghelp Vs Nagios
 -----------------
@@ -27,8 +29,8 @@ Naghelp Vs Nagios
 There is a little difference between a naghelp plugin and a Nagios plugin :
 
 A naghelp plugin is a python class, a Nagios plugin is a script.
-To build a Nagios plugin from a naghelp plugin, you just have to instantiate a naghelp plugin class
-and call the ``run()`` method::
+To build a Nagios plugin from a naghelp plugin, you just have to instantiate a
+naghelp plugin class and call the ``run()`` method::
 
    #!/usr/bin/python
 
@@ -65,24 +67,32 @@ Plugin development
 
 The main steps for coding a plugin with naghelp are :
 
-   * Develop a class derived from :class:`naghelp.ActivePlugin` or derived from a project
-     common class itself derived from :class:`naghelp.ActivePlugin`.
+   * Develop a class derived from :class:`naghelp.ActivePlugin` or derived from
+     a project common class itself derived from :class:`naghelp.ActivePlugin`.
 
      The main attributes/method to override are :
 
-         * Attribute :attr:`~naghelp.ActivePlugin.cmd_params` that lists what parameters may be used on command line.
-         * Attribute :attr:`~naghelp.ActivePlugin.required_params` tells what parameters are required
-         * Attributes :attr:`~naghelp.ActivePlugin.tcp_ports` and :attr:`~naghelp.ActivePlugin.udp_ports` tell what ports to check if needed
-         * Method :meth:`~naghelp.ActivePlugin.collect_data` to collect raw data
-         * Method :meth:`~naghelp.ActivePlugin.parse_data` to parse raw data into structured data
-         * Method :meth:`~naghelp.ActivePlugin.build_response` to use collected and parsed data for updating response object
+         * Attribute :attr:`~naghelp.ActivePlugin.cmd_params` that lists what
+           parameters may be used on command line.
+         * Attribute :attr:`~naghelp.ActivePlugin.required_params` tells what
+           parameters are required
+         * Attributes :attr:`~naghelp.ActivePlugin.tcp_ports` and
+           :attr:`~naghelp.ActivePlugin.udp_ports` tell what ports to check
+           if needed
+         * Method :meth:`~naghelp.ActivePlugin.collect_data` to collect raw
+           data
+         * Method :meth:`~naghelp.ActivePlugin.parse_data` to parse raw data
+           into structured data
+         * Method :meth:`~naghelp.ActivePlugin.build_response` to use collected
+           and parsed data for updating response object
 
    * Instantiate the plugin class
    * run it with a :meth:`run()`
 
-The :meth:`run()` method takes care of using attributes and calling method specified above. it also
-takes care of rendering the response object into Nagios string syntax, to display it onto stdout and
-exiting the plugin with appropriate exit code.
+The :meth:`run()` method takes care of using attributes and calling method
+specified above. it also takes care of rendering the response object into
+Nagios string syntax, to display it onto stdout and exiting the plugin with
+appropriate exit code.
 
 That's all.
 
@@ -90,11 +100,11 @@ That's all.
 A Plugin explained
 ------------------
 
-In order to understand how to code a plugin, let's take the plugin from the :doc:`intro` and explain it
-line by line.
+In order to understand how to code a plugin, let's take the plugin from the
+:doc:`intro` and explain it line by line.
 
-The plugin class is included into a python scripts (let's say ``linux_fs_full_plugin.py``) that will be executed
-by Nagios directly::
+The plugin class is included into a python scripts (let's say
+``linux_fs_full_plugin.py``) that will be executed by Nagios directly::
 
    #!/usr/bin/python
    from naghelp import *
