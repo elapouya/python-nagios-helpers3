@@ -251,6 +251,17 @@ class PluginResponse(object):
             msg = msg % args
         if kwargs:
             msg = msg.format(**kwargs)
+
+        # if a string of bytes, ensure it can be utf-8 decoded
+        if isinstance(msg, bytes):
+            try:
+                msg.decode('utf-8')
+            except UnicodeDecodeError:
+                try:
+                    # try another french usual encoding...
+                    msg = msg.decode('ISO-8859-1').encode('utf-8')
+                except UnicodeDecodeError:
+                    msg = msg.decode('utf-8','replace').encode('utf-8')
         return msg
 
     def add_begin(self, msg, *args, **kwargs):
@@ -888,7 +899,7 @@ class PluginResponse(object):
                 msg = msg % args
             if kwargs:
                 msg = msg.format(**kwargs)
-            self.more_msgs.append(msg)
+            self.more_msgs.append(self._reformat_msg(msg, *args, **kwargs))
 
     def add_end(self, msg, *args, **kwargs):
         r"""Add a message in end section
@@ -932,17 +943,9 @@ class PluginResponse(object):
             ========================================
             Date : 2105-12-18, Time : 14:55:11
         """
-        naghelp.logger.debug('response -> add_more("%s") %s',
+        naghelp.logger.debug('response -> add_end("%s") %s',
                              msg, naghelp.debug_caller())
-        if isinstance(msg, (list, tuple)):
-            msg = '\n'.join(msg)
-        elif not isinstance(msg, str):
-            msg = str(msg)
-        if args:
-            msg = msg % args
-        if kwargs:
-            msg = msg.format(**kwargs)
-        self.end_msgs.append(msg)
+        self.end_msgs.append(self._reformat_msg(msg, *args, **kwargs))
 
     def add_perf_data(self, data):
         r"""Adds performance object into the response.
