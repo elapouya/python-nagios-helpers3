@@ -1,3 +1,7 @@
+3.0.1 (2019-02-06)
+------------------
+Add run_channels() method to Ssh class
+
 3.0.0 (2018-11-29)
 ------------------
 Port of python-nagios-helpers from python 2 to python 3

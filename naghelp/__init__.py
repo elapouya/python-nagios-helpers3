@@ -4,7 +4,7 @@ python-nagios-helpers - Python Nagios plug-in and configuration environment
 Copyright (C) 2015 Eric Lapouyade
 """
 
-__version__ = '0.2.3'
+__version__ = '3.0.1'
 __author__ = 'Eric Lapouyade'
 __copyright__ = 'Copyright 2015-2018, python-nagios-helpers project'
 __credits__ = ['Eric Lapouyade',
