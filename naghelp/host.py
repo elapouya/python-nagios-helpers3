@@ -177,7 +177,7 @@ class Host(dict):
             >>> lst = ['{name} as got IP={ip} and custom data "{my_custom_data}"',
             ... 'Not available data are replaced by a dash: {other_data}']
             >>> print host.to_list(lst)  # doctest: +NORMALIZE_WHITESPACE
-            [u'host_to_be_monitored as got IP=192.168.0.33 and custom data "last check time"',
+            ['host_to_be_monitored as got IP=192.168.0.33 and custom data "last check time"',
             'Not available data are replaced by a dash: -']
 
             .. note::
@@ -333,8 +333,8 @@ class Host(dict):
         for k,v in sorted(self.items()):
             if isinstance(v,str):
                 v = v.decode('utf-8','replace')
-            lst.append(u'%-12s : %s' % (k,v))
-        return u'\n'.join(lst)
+            lst.append('%-12s : %s' % (k,v))
+        return '\n'.join(lst)
 
     def _get_persistent_filename(self):
         """Get the full path for the persisten .json file

@@ -589,7 +589,7 @@ class Plugin(object):
             ... }''')
             >>> data = ActivePlugin.load_data('/tmp/my_data')
             >>> print data
-            {u'powers': {'1': 'OK',
+            {'powers': {'1': 'OK',
                          '3': 'OK',
                          '2': 'Degraded',
                          '4': 'Failed'}, 'nb_disks': 36}
@@ -1370,12 +1370,9 @@ class ActivePlugin(Plugin):
             #. call do_feature() method
             #. save host persistent data
         """
-        try:
-            self.load_host_data()
-            self.do_feature()
-            self.save_host_data()
-        except Exception as e:
-            self.error('Plugin internal error : %s' % e, exception=e)
+        self.load_host_data()
+        self.do_feature()
+        self.save_host_data()
 
 
 def datetime_handler(obj):

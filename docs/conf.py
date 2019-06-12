@@ -51,8 +51,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'python-nagios-helpers'
-copyright = u'2015, Eric Lapouyade'
+project = 'python-nagios-helpers'
+copyright = '2015, Eric Lapouyade'
 
 intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
                        'textops':('http://python-textops.readthedocs.org/en/latest', None)}
@@ -61,7 +61,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
 #   rst2pdf - name of the generated pdf
 #   Sample rst2pdf doc - title of the pdf
 #   Your Name - author name in the pdf
-pdf_documents = [('index', u'naghelp_pdf', u'python-nagios-helpers', u'Eric Lapouyade'),]
+pdf_documents = [('index', 'naghelp_pdf', 'python-nagios-helpers', 'Eric Lapouyade'),]
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -222,8 +222,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'python-nagios-helpers.tex', u'python-nagios-helpers Documentation',
-   u'Eric Lapouyade', 'manual'),
+  ('index', 'python-nagios-helpers.tex', 'python-nagios-helpers Documentation',
+   'Eric Lapouyade', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -252,8 +252,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'python-nagios-helpers', u'python-nagios-helpers Documentation',
-     [u'Eric Lapouyade'], 1)
+    ('index', 'python-nagios-helpers', 'python-nagios-helpers Documentation',
+     ['Eric Lapouyade'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -266,8 +266,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'python-nagios-helpers', u'python-nagios-helpers Documentation',
-   u'Eric Lapouyade', 'python-nagios-helpers', 'Python text operations library.',
+  ('index', 'python-nagios-helpers', 'python-nagios-helpers Documentation',
+   'Eric Lapouyade', 'python-nagios-helpers', 'Python text operations library.',
    'Miscellaneous'),
 ]
 
