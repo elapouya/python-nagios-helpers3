@@ -331,7 +331,7 @@ class Host(dict):
     def _pprint(self):
         lst = []
         for k,v in sorted(self.items()):
-            if isinstance(v,str):
+            if isinstance(v,bytes):
                 v = v.decode('utf-8','replace')
             lst.append('%-12s : %s' % (k,v))
         return '\n'.join(lst)
