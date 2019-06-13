@@ -1540,7 +1540,7 @@ class Ssh(object):
 
                 ssh = Ssh('localhost','www','wwwpassword')
                 out, err, status =  ssh.run_channels('ls -la')
-                print 'out = %s\nerr = %s\nstatus=%s' % (out, err, status)
+                print('out = %s\nerr = %s\nstatus=%s' % (out, err, status))
 
             SSH with multiple commands (use ``with`` to keep connection opened). This is
             usefull when one command depend on another one::
@@ -1549,7 +1549,7 @@ class Ssh(object):
                     cur_dir, err, status = ssh.run_channels('pwd').strip()
                     if not err:
                         big_files_full_path = ssh.run('find %s -type f -size +10000' % cur_dir)
-                print big_files_full_path
+                print(big_files_full_path)
         """
         if not self.is_connected:
             raise NotConnected('No ssh connection to run your command.')
@@ -1732,7 +1732,7 @@ class Ssh(object):
             SSH with multiple commands::
 
                 ssh = Ssh('localhost','www','wwwpassword')
-                print ssh.mrun_channels({'cur_dir':'pwd','big_files':'find . -type f -size +10000'})
+                print(ssh.mrun_channels({'cur_dir':'pwd','big_files':'find . -type f -size +10000'}))
 
             Will return something like::
 
@@ -1752,7 +1752,7 @@ class Ssh(object):
             To be sure to have the commands order respected, use list of items instead of a dict::
 
                 ssh = Ssh('localhost','www','wwwpassword')
-                print ssh.mrun_channels( (('cmd','./mycommand'),('cmd_err','echo $?')) )
+                print(ssh.mrun_channels( (('cmd','./mycommand'),('cmd_err','echo $?')) ))
 
         """
         if not self.is_connected:
@@ -2289,7 +2289,7 @@ class Snmp(object):
         Example:
 
             >>> snmp = Snmp('demo.snmplabs.com')
-            >>> print snmp.mget({'uname':'1.3.6.1.2.1.1.0',
+            >>> print(snmp.mget({'uname':'1.3.6.1.2.1.1.0',)
             >>>                  'other':'1.3.6.1.2.1.1.2-9.0'})
             {'uname' : 'SunOS zeus.snmplabs.com 4.1.3_U1 1 sun4m',
              'other' : ['value for 1.3.6.1.2.1.1.2.0',

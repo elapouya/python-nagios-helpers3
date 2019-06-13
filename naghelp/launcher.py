@@ -9,30 +9,30 @@ import sys
 
 def usage(plugin_base_class,error=''):
     """Prints launcher usage and display all available plugin classes"""
-    print 'Usage : %s <plugin name or path.to.module.PluginClass> [options]\n' % sys.argv[0]
+    print('Usage : %s <plugin name or path.to.module.PluginClass> [options]\n' % sys.argv[0])
     if error:
-        print '%s\n' % error
-    print 'Available plugins :'
-    print '=' * 110
-    print '%-30s %-30s %s' % ('Name','File','Description')
-    print '-' * 110
+        print('%s\n' % error)
+    print('Available plugins :')
+    print('=' * 110)
+    print('%-30s %-30s %s' % ('Name','File','Description'))
+    print('-' * 110)
     for name,plugin in sorted(plugin_base_class.find_plugins().items(),key=lambda x: x[1]['name']):
-        print '%-30s %-30s %s' % (plugin['name'],plugin['path'],plugin['desc'].strip())
-    print '-' * 110
+        print('%-30s %-30s %s' % (plugin['name'],plugin['path'],plugin['desc'].strip()))
+    print('-' * 110)
 
     import_errors = plugin_base_class.find_plugins_import_errors()
     if import_errors:
         import traceback
         print
-        print '*** Some errors have been found when importing modules ***'
+        print('*** Some errors have been found when importing modules ***')
         print
         for filename, e in import_errors:
-            print '%s :' % filename
-            print '-' * 80
+            print('%s :' % filename)
+            print('-' * 80)
             try:
                 raise e
             except:
-                print traceback.format_exc()
+                print(traceback.format_exc())
             print
             print
 

@@ -59,6 +59,6 @@ setup(name='python-nagios-helpers',
                         'pysnmp',
                         'requests',
                         'pywinrm',
-                        'addicted', 'scp', 'pyasn1'],
+                        'addicted3', 'scp', 'pyasn1'],
       eager_resources=['docs'],
       zip_safe=False)

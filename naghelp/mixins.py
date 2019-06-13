@@ -81,41 +81,41 @@ class GaugeMixin(object):
             ...
             >>> p=MyPluginWithGauges()
             >>> p.gauge_response_threshold('test','Test gauge','90',0,10,70,100)
-            >>> print p.response                         #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                         #doctest: +NORMALIZE_WHITESPACE
             Test gauge : 90 >= MAX WARNING (70)
             ==================================[  STATUS  ]==================================
             <BLANKLINE>
             ----( WARNING )-----------------------------------------------------------------
             Test gauge : 90 >= MAX WARNING (70)
             <BLANKLINE>
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Test gauge : 90
             >>> p=MyPluginWithGauges()
             >>> p.gauge_response_threshold('test','Test gauge','-10',0,10,70,100)
-            >>> print p.response                         #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                         #doctest: +NORMALIZE_WHITESPACE
             Test gauge : -10 <= MIN CRITICAL (10)
             ==================================[  STATUS  ]==================================
             <BLANKLINE>
             ----( CRITICAL )----------------------------------------------------------------
             Test gauge : -10 <= MIN CRITICAL (10)
             <BLANKLINE>
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Test gauge : -10
             >>> p=MyPluginWithGauges()
             >>> p.gauge_response_threshold('test','Test gauge','Temperature=110C',0,10,70,100)
-            >>> print p.response                         #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                         #doctest: +NORMALIZE_WHITESPACE
             Test gauge : 110 >= MAX CRITICAL (100)
             ==================================[  STATUS  ]==================================
             <BLANKLINE>
             ----( CRITICAL )----------------------------------------------------------------
             Test gauge : 110 >= MAX CRITICAL (100)
             <BLANKLINE>
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Test gauge : Temperature=110C
             <BLANKLINE>
         """
         self.response.add_more('%s : %s',label,value,no_debug=True)
-        if isinstance(value,basestring):
+        if isinstance(value,str):
             value = find_pattern.op(value,r'(-?[\d,\.]+)').replace(',','.')
             if value:
                 if '.' in value:
@@ -162,30 +162,30 @@ class GaugeMixin(object):
             >>> p.doctest_begin()                    # only for doctest
             >>> p.gauge_etalon_clear('tempcursor')   # only for doctest
             >>> p.gauge_response_etalon_change('tempcursor','Temperature cursor',20,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             OK
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 20
             >>> p.doctest_end()
             >>> p=MyPluginWithGauges()
             >>> p.doctest_begin()                    # only for doctest
             >>> p.gauge_response_etalon_change('tempcursor','Temperature cursor',21,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             Temperature cursor : actual value (21) has changed (was 20)
             ==================================[  STATUS  ]==================================
             <BLANKLINE>
             ----( CRITICAL )----------------------------------------------------------------
             Temperature cursor : actual value (21) has changed (was 20)
             <BLANKLINE>
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 21
             >>> p.doctest_end()                      # only for doctest
             >>> p=MyPluginWithGauges()
             >>> p.doctest_begin()
             >>> p.gauge_response_etalon_change('tempcursor','Temperature cursor',21,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             OK
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 21
             >>> p.doctest_end()
         """
@@ -228,15 +228,15 @@ class GaugeMixin(object):
             >>> p.doctest_begin()                        # only for doctest
             >>> p.gauge_etalon_clear('tempcursor')       # only for doctest
             >>> p.gauge_response_etalon_down('tempcursor','Temperature cursor',20,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             OK
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 20
             >>> p.doctest_end()
             >>> p=MyPluginWithGauges()                   # 2nd plugin execution
             >>> p.doctest_begin()                        # only for doctest
             >>> p.gauge_response_etalon_down('tempcursor','Temperature cursor',19,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             Temperature cursor : actual value (19) is less than the reference value (20...
             ... )
             ==================================[  STATUS  ]==================================
@@ -244,15 +244,15 @@ class GaugeMixin(object):
             ----( CRITICAL )----------------------------------------------------------------
             Temperature cursor : actual value (19) is less than the reference value (20)
             <BLANKLINE>
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 19
             >>> p.doctest_end()                          # only for doctest
             >>> p=MyPluginWithGauges()
             >>> p.doctest_begin()                        # only for doctest
             >>> p.gauge_response_etalon_down('tempcursor','Temperature cursor',19,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             OK
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 19
             >>> p.doctest_end()                          # only for doctest
         """
@@ -295,15 +295,15 @@ class GaugeMixin(object):
             >>> p.doctest_begin()                        # only for doctest
             >>> p.gauge_etalon_clear('tempcursor')       # only for doctest
             >>> p.gauge_response_etalon_up('tempcursor','Temperature cursor',20,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             OK
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 20
             >>> p.doctest_end()
             >>> p=MyPluginWithGauges()                   # 2nd plugin execution
             >>> p.doctest_begin()                        # only for doctest
             >>> p.gauge_response_etalon_up('tempcursor','Temperature cursor',21,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             Temperature cursor : actual value (21) is more than the reference value (20...
             ... )
             ==================================[  STATUS  ]==================================
@@ -311,15 +311,15 @@ class GaugeMixin(object):
             ----( CRITICAL )----------------------------------------------------------------
             Temperature cursor : actual value (21) is more than the reference value (20)
             <BLANKLINE>
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 21
             >>> p.doctest_end()                          # only for doctest
             >>> p=MyPluginWithGauges()
             >>> p.doctest_begin()                        # only for doctest
             >>> p.gauge_response_etalon_up('tempcursor','Temperature cursor',21,CRITICAL)
-            >>> print p.response                                  #doctest: +NORMALIZE_WHITESPACE
+            >>> print(p.response)                                  #doctest: +NORMALIZE_WHITESPACE
             OK
-            ==========================[ Additionnal informations ]==========================
+            ==========================[ Additional informations ]===========================
             Temperature cursor : 21
             >>> p.doctest_end()                          # only for doctest
         """

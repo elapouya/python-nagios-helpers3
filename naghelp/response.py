@@ -132,7 +132,7 @@ class PluginResponse(object):
     Examples:
 
         >>> r = PluginResponse(OK)
-        >>> print r
+        >>> print(r)
         OK
         <BLANKLINE>
 
@@ -158,10 +158,10 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.level
+            >>> print(r.level)
             None
             >>> r.set_level(WARNING)
-            >>> print r.level
+            >>> print(r.level)
             WARNING
         """
         if not isinstance(level, ResponseLevel):
@@ -185,10 +185,10 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             OK
             >>> r.set_level(WARNING)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             WARNING
         """
         return self.default_level if self.level is None else self.level
@@ -234,10 +234,10 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.get_sublevel()
+            >>> print(r.get_sublevel())
             0
             >>> r.set_sublevel(2)
-            >>> print r.get_sublevel()
+            >>> print(r.get_sublevel())
             2
         """
         return self.sublevel
@@ -292,16 +292,16 @@ class PluginResponse(object):
             >>> r.add_begin('\n')
             >>> r.add(CRITICAL, "This is critical!")
             >>> print(r)     #doctest: +NORMALIZE_WHITESPACE
-            This is critical !
+            This is critical!
             ========================================
                              MyHost
             ========================================
             Date : 2105-12-18, Time : 14:55:11
             <BLANKLINE>
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
-            This is critical !
+            ----( CRITICAL )----------------------------------------------------------------
+            This is critical!
             <BLANKLINE>
             <BLANKLINE>
         """
@@ -337,28 +337,28 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             OK
             >>> r.add(CRITICAL,'The system crashed')
             >>> r.add(WARNING,'Found some almost full file system')
             >>> r.add(UNKNOWN,'Cannot find FAN %s status', 0)
             >>> r.add(OK,'Power {power_id} is ON', power_id=1)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             CRITICAL
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
+            >>> print(r)     #doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:1, WARNING:1, UNKNOWN:1, OK:1
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             The system crashed
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             Found some almost full file system
             <BLANKLINE>
-            ----( UNKNOWN )----------------------------------------------------
+            ----( UNKNOWN )-----------------------------------------------------------------
             Cannot find FAN 0 status
             <BLANKLINE>
-            ----( OK )----------------------------------------------------
+            ----( OK )----------------------------------------------------------------------
             Power 1 is ON
             <BLANKLINE>
             <BLANKLINE>
@@ -397,16 +397,16 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             OK
             >>> r.add_comment(CRITICAL,'Here are some errors')
             >>> r.add(CRITICAL,'error 1')
             >>> r.add(CRITICAL,'error 2')
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
+            >>> print(r)     #doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             Here are some errors
             error 1
             error 2
@@ -456,7 +456,7 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             OK
             >>> logs = '''
             ... Power 0 is critical
@@ -479,13 +479,13 @@ class PluginResponse(object):
             CRITICAL
             >>> print(r)  #doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2, WARNING:2
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
@@ -493,14 +493,14 @@ class PluginResponse(object):
 
             >>> r = PluginResponse()
             >>> r.add_list(WARNING,['Power warning1','Power warning2'],
-            >>>            '{_len} Power warnings:','Power warnings : {_len}')
+            ...            '{_len} Power warnings:','Power warnings : {_len}')
             >>> r.add_list(WARNING,['CPU warning1','CPU warning2'],
-            >>>            '{_len} CPU warnings:','CPU warnings : {_len}')
+            ...            '{_len} CPU warnings:','CPU warnings : {_len}')
             >>> print(r)
             STATUS : WARNING:4
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             2 Power warnings:
             Power warning1
             Power warning2
@@ -568,40 +568,40 @@ class PluginResponse(object):
             ... ''')
             >>>
             >>> print(logs.sgrep(('critical|failed',
-            >>>                   'degraded|warning')))
+            ...                   'degraded|warning')))
             [['Power 0 is critical', 'Power 3 is failed'],
              ['Power 2 is degraded', 'Power 5 is degraded'],
              ['', 'Power 1 is OK', 'Power 4 is OK']]
             >>> r.add_mlist((CRITICAL, WARNING, OK),
-            >>>             logs.sgrep(('critical|failed','degraded|warning')))
-            >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
+            ...             logs.sgrep(('critical|failed','degraded|warning')))
+            >>> print(r)
             STATUS : CRITICAL:2, WARNING:2, OK:2
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )-----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
-            ----( OK )----------------------------------------------------------
+            ----( OK )----------------------------------------------------------------------
             Power 1 is OK
             Power 4 is OK
             <BLANKLINE>
             >>> r = PluginResponse(OK)
             >>> r.add_mlist((CRITICAL, WARNING, None),
-            >>>             logs.sgrep(('critical|failed','degraded|warning')))
+            ...             logs.sgrep(('critical|failed','degraded|warning')))
             >>> print(r)
             STATUS : CRITICAL:2, WARNING:2
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
@@ -635,7 +635,7 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             OK
             >>> logs = '''
             ... Power 0 is critical
@@ -647,8 +647,8 @@ class PluginResponse(object):
             ... '''
             >>> from textops import *
             >>> errors = [(CRITICAL
-            >>>           if error | haspatterni('critical|failed')
-            >>>           else WARNING, error)
+            ...           if error | haspatterni('critical|failed')
+            ...           else WARNING, error)
             ...           for error in logs | grepv('OK')]
             >>> print(errors)  # doctest: +NORMALIZE_WHITESPACE
             [(WARNING, ''), (CRITICAL, 'Power 0 is critical'),
@@ -656,17 +656,17 @@ class PluginResponse(object):
              (CRITICAL, 'Power 3 is failed'),
              (WARNING, 'Power 5 is degraded')]
             >>> r.add_many(errors)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             CRITICAL
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
+            >>> print(r)     #doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2, WARNING:2
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
@@ -711,7 +711,7 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             OK
             >>> logs = '''
             ... Power 0 is critical
@@ -725,27 +725,27 @@ class PluginResponse(object):
             >>> nb_criticals = logs | grepc('critical|failed')
             >>> print(nb_criticals)
             2
-            >>> warnings = logs or grep('degraded|warning').tostr()
+            >>> warnings = logs | grep('degraded|warning').tostr()
             >>> print(warnings)
             Power 2 is degraded
             Power 5 is degraded
-            >>> unknowns = logs or grep('unknown').tostr()
+            >>> unknowns = logs | grep('unknown').tostr()
             >>> print(unknowns)
             <BLANKLINE>
             >>> r.add_if(nb_criticals, CRITICAL, '{n} power(s) are critical',
-            >>>          n=nb_criticals)
+            ...          n=nb_criticals)
             >>> r.add_if(warnings, WARNING)
             >>> r.add_if(unknowns, UNKNOWN)
             >>> print(r.get_current_level())
             CRITICAL
             >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:1, WARNING:1
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             2 power(s) are critical
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
@@ -786,7 +786,7 @@ class PluginResponse(object):
         Examples:
 
             >>> r = PluginResponse(OK)
-            >>> print r.get_current_level()
+            >>> print(r.get_current_level())
             OK
             >>> logs = '''
             ... Power 0 is critical
@@ -810,20 +810,20 @@ class PluginResponse(object):
             CRITICAL
             >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
             STATUS : CRITICAL:2, WARNING:2, UNKNOWN:1, OK:2
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             Power 0 is critical
             Power 3 is failed
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             Power 2 is degraded
             Power 5 is degraded
             <BLANKLINE>
-            ----( UNKNOWN )----------------------------------------------------
+            ----( UNKNOWN )-----------------------------------------------------------------
             Power 6 is smoking
             <BLANKLINE>
-            ----( OK )---------------------------------------------------
+            ----( OK )----------------------------------------------------------------------
             Power 1 is OK
             Power 4 is OK
             <BLANKLINE>
@@ -876,14 +876,14 @@ class PluginResponse(object):
             >>> r = PluginResponse(OK)
             >>> r.add(CRITICAL,'This is critical!')
             >>> r.add_more('Date : %s, Time : %s', '2105-12-18', '14:55:11')
-            >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
+            >>> print(r)
             This is critical!
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             This is critical!
             <BLANKLINE>
-            ====================[ Additional informations ]=====================
+            ==========================[ Additional informations ]===========================
             Date : 2105-12-18, Time : 14:55:11
         """
         if not kwargs.get('no_debug'):
@@ -891,14 +891,6 @@ class PluginResponse(object):
                                  msg, naghelp.debug_caller())
 
         if msg:
-            if isinstance(msg, (list, tuple)):
-                msg = '\n'.join(msg)
-            elif not isinstance(msg, str):
-                msg = str(msg)
-            if args:
-                msg = msg % args
-            if kwargs:
-                msg = msg.format(**kwargs)
             self.more_msgs.append(self._reformat_msg(msg, *args, **kwargs))
 
     def add_end(self, msg, *args, **kwargs):
@@ -928,14 +920,14 @@ class PluginResponse(object):
             >>> r.add_end('='*40)
             >>> r.add_end('Date : %s, Time : %s', '2105-12-18', '14:55:11')
             >>> r.add_end('\n')
-            >>> r.add(CRITICAL,'This is critical !')
-            >>> print r     #doctest: +NORMALIZE_WHITESPACE
-            This is critical !
+            >>> r.add(CRITICAL,'This is critical!')
+            >>> print(r)     #doctest: +NORMALIZE_WHITESPACE
+            This is critical!
             <BLANKLINE>
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
-            This is critical !
+            ----( CRITICAL )----------------------------------------------------------------
+            This is critical!
             <BLANKLINE>
             <BLANKLINE>
             ========================================
@@ -964,9 +956,9 @@ class PluginResponse(object):
             >>> r.add_begin('Begin\n')
             >>> r.add_end('End')
             >>> r.add_perf_data(PerfData('filesystem_/', '55', '%', '95', '98',
-            >>>                          '0','100'))
+            ...                          '0','100'))
             >>> r.add_perf_data(PerfData('filesystem_/usr', '34', '%', '95',
-            >>>                          '98', '0', '100'))
+            ...                          '98', '0', '100'))
             >>> r.add_perf_data('cpu_wait=88%;40;60;0;100')
             >>> r.add_perf_data('cpu_user=12%;80;95;0;100')
             >>> print(r)
@@ -1009,18 +1001,18 @@ class PluginResponse(object):
             >>> r.add(CRITICAL,'This is critical!')
             >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
             This is critical!
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             This is critical!
             <BLANKLINE>
             >>> r.set_synopsis('Mayday, Mayday, Mayday')
             >>> print(r)  # doctest: +NORMALIZE_WHITESPACE
             Mayday, Mayday, Mayday
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
-            This is critical !
+            ----( CRITICAL )----------------------------------------------------------------
+            This is critical!
             <BLANKLINE>
         """
         if not isinstance(msg, str):
@@ -1047,10 +1039,10 @@ class PluginResponse(object):
         Examples:
             >>> r = PluginResponse(OK)
             >>> r.add(CRITICAL, 'This is critical!')
-            >>> print r.get_default_synopsis()
+            >>> print(r.get_default_synopsis())
             This is critical!
             >>> r.add(WARNING, 'This is just a warning.')
-            >>> print r.get_default_synopsis()
+            >>> print(r.get_default_synopsis())
             STATUS : CRITICAL:1, WARNING:1
         """
         not_comment = lambda s: not isinstance(s, LevelComment)
@@ -1092,8 +1084,8 @@ class PluginResponse(object):
         Example:
 
             >>> r = PluginResponse(OK)
-            >>> print r.section_format('My section')
-            ===========================[ My section ]===========================
+            >>> print(r.section_format('My section'))
+            =================================[ My section ]=================================
         """
         return '{0:=^80}'.format('[ {0:^8} ]'.format(title))
 
@@ -1116,8 +1108,8 @@ class PluginResponse(object):
         Example:
 
             >>> r = PluginResponse(OK)
-            >>> print r.subsection_format('My subsection')
-            ----( My subsection )-----------------------------------------------
+            >>> print(r.subsection_format('My subsection'))
+            ----( My subsection )-----------------------------------------------------------
         """
         return '----' + '{0:-<76}'.format('( %s )' % title)
 
@@ -1139,12 +1131,12 @@ class PluginResponse(object):
             >>> r.add(CRITICAL,'This is critical!')
             >>> r.add(WARNING,'This is just a warning.')
             >>> print(r.level_msgs_render())
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
+            ----( CRITICAL )----------------------------------------------------------------
             This is critical!
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             This is just a warning.
             <BLANKLINE>
             <BLANKLINE>
@@ -1209,24 +1201,24 @@ class PluginResponse(object):
 
             >>> print(r.get_output())
             STATUS : CRITICAL:1, WARNING:1
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
-            This is critical !
+            ----( CRITICAL )----------------------------------------------------------------
+            This is critical!
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             This is just a warning.
             <BLANKLINE>
             <BLANKLINE>
 
-            >>> print r
+            >>> print(r)
             STATUS : CRITICAL:1, WARNING:1
-            ============================[  STATUS  ]============================
+            ==================================[  STATUS  ]==================================
             <BLANKLINE>
-            ----( CRITICAL )----------------------------------------------------
-            This is critical !
+            ----( CRITICAL )----------------------------------------------------------------
+            This is critical!
             <BLANKLINE>
-            ----( WARNING )----------------------------------------------------
+            ----( WARNING )-----------------------------------------------------------------
             This is just a warning.
             <BLANKLINE>
             <BLANKLINE>

@@ -19,7 +19,9 @@ for m in modules:
     print('Testing %s ...' % m)
     mod = __import__(m, fromlist=[''])
     f_count, t_count = doctest.testmod(mod, globs=globals(),
-                                       optionflags=doctest.REPORT_NDIFF)
+        optionflags=(doctest.REPORT_NDIFF |
+                     doctest.NORMALIZE_WHITESPACE |
+                     doctest.ELLIPSIS) )
     failed += f_count
     tested += t_count
 
@@ -28,7 +30,9 @@ for f in files:
     print('Testing %s ...' % f)
     path = os.path.join(base_dir, f)
     f_count, t_count = doctest.testfile(path, False, globs=globals(),
-                                        optionflags=doctest.REPORT_NDIFF)
+        optionflags=(doctest.REPORT_NDIFF |
+                     doctest.NORMALIZE_WHITESPACE |
+                     doctest.ELLIPSIS))
     failed += f_count
     tested += t_count
 

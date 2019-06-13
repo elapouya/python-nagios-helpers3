@@ -536,9 +536,9 @@ class Plugin(object):
         Examples:
 
             >>> data={'powers': {1:'OK', 2:'Degraded',3:'OK', 4:'Failed'},
-            >>>       'nb_disks': 36 }
+            ...       'nb_disks': 36 }
             >>> ActivePlugin.save_data('/tmp/my_data',data)
-            >>> print open('/tmp/my_data').read()
+            >>> print(open('/tmp/my_data').read())
             {
                 "powers": {
                     "1": "OK",
@@ -587,16 +587,13 @@ class Plugin(object):
             ...   },
             ...   "nb_disks": 36
             ... }''')
+            108
             >>> data = ActivePlugin.load_data('/tmp/my_data')
-            >>> print data
-            {'powers': {'1': 'OK',
-                         '3': 'OK',
-                         '2': 'Degraded',
-                         '4': 'Failed'}, 'nb_disks': 36}
-            >>> print type(data)
+            >>> print(data)
+            {'powers': {'1': 'OK', '2': 'Degraded',
+                        '3': 'OK', '4': 'Failed'}, 'nb_disks': 36}
+            >>> print(type(data))
             <class 'textops.base.DictExt'>
-
-        See :meth:`save_data` to know how ``/tmp/my_data`` has been generated.
         """
         cls.debug('Loading data from %s :', filename)
         try:
@@ -1203,9 +1200,9 @@ class ActivePlugin(Plugin):
                 >>> p = ActivePlugin()
                 >>> print(p.get_plugin_informations())
                 <BLANKLINE>
-                ==================[ Plugin Informations ]=======================
+                ============================[ Plugin Informations ]=============================
                 Plugin name : naghelp.plugin.ActivePlugin
-                Description : Python base class for active nagios plugins
+                Description : Python base class for active nagios plugins.
                 Execution date : ...
                 Execution time : ...
                 Ports used : tcp = none, udp = none

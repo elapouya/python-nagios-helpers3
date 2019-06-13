@@ -64,17 +64,17 @@ class Host(dict):
         >>> os.environ['NAGIOS_HOSTNAME']='host_to_be_monitored'
         >>> plugin = ActivePlugin()
         >>> host = Host(plugin)
-        >>> print host.name
+        >>> print(host.name)
         host_to_be_monitored
         >>> host.my_custom_data = 'last check time'
-        >>> print host.my_custom_data
+        >>> print(host.my_custom_data)
         last check time
-        >>> print host['my_custom_data']
+        >>> print(host['my_custom_data'])
         last check time
         >>> host.save_data()
         >>> host._get_persistent_filename()
         '/tmp/naghelp/host_to_be_monitored_persistent_data.json'
-        >>> print open(host._get_persistent_filename()).read() #doctest: +NORMALIZE_WHITESPACE
+        >>> print(open(host._get_persistent_filename()).read()) #doctest: +NORMALIZE_WHITESPACE
         {
             "name": "host_to_be_monitored",
             "my_custom_data": "last check time"
@@ -84,10 +84,10 @@ class Host(dict):
         >>> os.environ['NAGIOS_HOSTNAME']='host_to_be_monitored'
         >>> plugin = ActivePlugin()
         >>> host = Host(plugin)
-        >>> print host.my_custom_data
+        >>> print(host.my_custom_data)
         <BLANKLINE>
         >>> host.load_data()
-        >>> print host.my_custom_data
+        >>> print(host.my_custom_data)
         last check time
     """
     persistent_filename_pattern = '/tmp/naghelp/%s_persistent_data.json'
@@ -136,11 +136,11 @@ class Host(dict):
             >>> plugin = ActivePlugin()
             >>> host = Host(plugin)
             >>> host.load_data()
-            >>> print host.to_str('{name} as got IP={ip} and custom data "{my_custom_data}"')
+            >>> print(host.to_str('{name} as got IP={ip} and custom data "{my_custom_data}"'))
             host_to_be_monitored as got IP=192.168.0.33 and custom data "last check time"
-            >>> print host.to_str('Not available data are replaced by a dash: {other_data}')
+            >>> print(host.to_str('Not available data are replaced by a dash: {other_data}'))
             Not available data are replaced by a dash: -
-            >>> print host.to_str('Or by whatever you want: {other_data}','N/A')
+            >>> print(host.to_str('Or by whatever you want: {other_data}','N/A'))
             Or by whatever you want: N/A
 
             .. note::
@@ -176,7 +176,7 @@ class Host(dict):
             >>> host.load_data()
             >>> lst = ['{name} as got IP={ip} and custom data "{my_custom_data}"',
             ... 'Not available data are replaced by a dash: {other_data}']
-            >>> print host.to_list(lst)  # doctest: +NORMALIZE_WHITESPACE
+            >>> print(host.to_list(lst))  # doctest: +NORMALIZE_WHITESPACE
             ['host_to_be_monitored as got IP=192.168.0.33 and custom data "last check time"',
             'Not available data are replaced by a dash: -']
 
@@ -218,7 +218,7 @@ class Host(dict):
         val = self.get(name)
         if not val:
             return default
-        if isinstance(val,basestring):
+        if isinstance(val,str):
             return dateutil.parser.parse(val)
         return val
 

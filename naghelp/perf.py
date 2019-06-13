@@ -35,10 +35,10 @@ class PerfData(object):
     Examples:
 
         >>> perf = PerfData('filesystem_/','55','%','95','98','0','100')
-        >>> print perf
+        >>> print(perf)
         filesystem_/=55%;95;98;0;100
         >>> perf.value = 99
-        >>> print perf
+        >>> print(perf)
         filesystem_/=99%;95;98;0;100
     """
     def __init__(self, label, value, uom=None, warn=None, crit=None, minval=None, maxval=None):
