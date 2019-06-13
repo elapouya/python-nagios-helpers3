@@ -1333,7 +1333,7 @@ class PluginResponse(object):
                     out.replace('\n', r'\n'))
         else:
             naghelp.logger.debug('Sending response on stdout...')
-            print(out.encode('utf-8') if isinstance(out, str) else out)
+            sys.stdout.buffer.write(out.encode('utf-8') if isinstance(out, str) else out)
             naghelp.logger.info('Exiting plugin with response level: '
                                 '%s, __sublevel__=%s',
                                 self.level.info(), self.sublevel)
