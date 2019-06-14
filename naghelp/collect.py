@@ -154,10 +154,10 @@ def _raise_unexpected_result(result, key, cmd, help_str=''):
 
 
 def _filter_result(result, key, cmd, expected_pattern=r'\S',
-                   unexpected_pattern=None, filter=None):
+                   unexpected_pattern=None, filter_func=None):
 
-    if isinstance(filter, collections.Callable):
-        filtered = list(filter(result, key, cmd))
+    if isinstance(filter_func, collections.Callable):
+        filtered = filter_func(result, key, cmd)
         if filtered is not None:
             result = filtered
 
