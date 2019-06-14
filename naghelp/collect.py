@@ -9,15 +9,12 @@ Creation: 2015-07-07
 
 import re
 import socket
-import signal
 from addicted import NoAttr
 import textops
 import naghelp
 import time
 import subprocess
 import traceback
-import fcntl
-import errno
 import os
 from .tools import Timeout, TimeoutError
 import collections
@@ -158,6 +155,7 @@ def _raise_unexpected_result(result, key, cmd, help_str=''):
 
 def _filter_result(result, key, cmd, expected_pattern=r'\S',
                    unexpected_pattern=None, filter=None):
+
     if isinstance(filter, collections.Callable):
         filtered = list(filter(result, key, cmd))
         if filtered is not None:
@@ -1329,6 +1327,8 @@ class Ssh(object):
             ``cmd`` is the command that generated the ``result`` and ``key``
             the key in the dictionary for ``mrun``, ``mget`` and ``mwalk``.
             By Default, there is no filter.
+        encoding: encoding to be used to decode bytes returned by the remote
+            commands execution. (Default : utf-8)
         add_stderr (bool): If True, the stderr will be added at the end of
             results (Default: True)
         port (int): port number to use (Default : 0 = 22)
@@ -1354,7 +1354,7 @@ class Ssh(object):
                  auto_accept_new_host=True,
                  prompt_pattern=None, get_pty=False, expected_pattern=r'\S',
                  unexpected_pattern=r'<timeout>',
-                 filter=None, add_stderr=True, *args, **kwargs):
+                 filter=None, encoding=None, add_stderr=True, *args, **kwargs):
         # import is done only on demand, because it takes some little time
         import paramiko
         self.in_with = False
@@ -1364,6 +1364,7 @@ class Ssh(object):
         self.expected_pattern = expected_pattern
         self.unexpected_pattern = unexpected_pattern
         self.filter = filter
+        self.encoding = encoding
         self.add_stderr = add_stderr
         self.client = paramiko.SSHClient()
         self.scpclient = None
@@ -1411,9 +1412,10 @@ class Ssh(object):
             buff += self.chan.recv(8192)
         return buff
 
-    def _run_cmd(self, cmd, timeout):
+    def _run_cmd(self, cmd, timeout, encoding=None):
         naghelp.logger.debug('collect -> run("%s") %s',
                              cmd, naghelp.debug_caller())
+        encoding = encoding or self.encoding
         if self.prompt_pattern is None:
             stdin, stdout, stderr = self.client.exec_command(
                 cmd, timeout=timeout, get_pty=self.get_pty)
@@ -1421,7 +1423,7 @@ class Ssh(object):
             if self.add_stderr:
                 out += stderr.read()
             naghelp.debug_listing(out)
-            return out
+            return textops.decode_bytes(out,encoding)
         else:
             self.chan.send('%s\n' % cmd)
             out = self._read_to_prompt()
@@ -1434,19 +1436,20 @@ class Ssh(object):
             out = out.splitlines()[:-1]
             cmd_out = '\n'.join(out)
             naghelp.debug_listing(cmd_out)
-            return cmd_out
+            return textops.decode_bytes(cmd_out,encoding)
 
-    def _run_cmd_channels(self,cmd,timeout):
+    def _run_cmd_channels(self, cmd, timeout, encoding=None):
+        encoding = encoding or self.encoding
         naghelp.logger.debug('collect -> run_channels("%s") %s',cmd,naghelp.debug_caller())
         stdin, stdout, stderr = self.client.exec_command(cmd,timeout=timeout,get_pty=self.get_pty)
-        out = stdout.read()
-        err = stderr.read()
+        out = textops.decode_bytes(stdout.read(),encoding)
+        err = textops.decode_bytes(stderr.read(),encoding)
         status = stdout.channel.recv_exit_status()
         naghelp.debug_listing(out + err)
         return out, err, status
 
     def run(self, cmd, timeout=30, auto_close=True, expected_pattern=0,
-            unexpected_pattern=0, filter=0, **kwargs):
+            unexpected_pattern=0, filter=0, encoding=None, **kwargs):
         """Executes one command
 
         Runs a single command at the usual prompt and then close the connection.
@@ -1500,7 +1503,7 @@ class Ssh(object):
         if not self.is_connected:
             raise NotConnected('No ssh connection to run your command.')
         try:
-            out = self._run_cmd(cmd, timeout=timeout)
+            out = self._run_cmd(cmd, timeout=timeout, encoding=encoding)
         except socket.timeout:
             out = '<timeout>'
         if auto_close:
@@ -1514,7 +1517,7 @@ class Ssh(object):
                               else self.unexpected_pattern,
                               filter if filter != 0 else self.filter)
 
-    def run_channels(self, cmd, timeout=30, auto_close=True):
+    def run_channels(self, cmd, timeout=30, auto_close=True, encoding=None):
         r"""Execute one command
 
         Runs a single command at the usual prompt and then close the connection. Timeout
@@ -1554,7 +1557,8 @@ class Ssh(object):
         if not self.is_connected:
             raise NotConnected('No ssh connection to run your command.')
         try:
-            out, err, status = self._run_cmd_channels(cmd,timeout=timeout)
+            out, err, status = self._run_cmd_channels(cmd,timeout=timeout,
+                                                      encoding=encoding)
         except socket.timeout:
             out = ''
             err = '<timeout>'
@@ -1563,7 +1567,7 @@ class Ssh(object):
             self.close()
         return out, err, status
 
-    def run_script(self, script, timeout=30, auto_close=True,
+    def run_script(self, script, timeout=30, auto_close=True, encoding=None,
                    expected_pattern=0, unexpected_pattern=0, filter=0,
                    auto_strip=True, format_dict={}, **kwargs):
         """Execute a script
@@ -1582,7 +1586,7 @@ class Ssh(object):
                     cmd = cmd.strip()
                 if cmd:
                     out += self._run_cmd(cmd.format(**format_dict),
-                                         timeout=timeout)
+                                         timeout=timeout, encoding=encoding)
         except socket.timeout:
             out = '<timeout>'
         if auto_close:
@@ -1614,8 +1618,8 @@ class Ssh(object):
             self.scpclient = SCPClient(self.client.get_transport())
         return self.scpclient.put(*args, **kwargs)
 
-    def mrun(self, cmds, timeout=30, auto_close=True, expected_pattern=0,
-             unexpected_pattern=0, filter=0, **kwargs):
+    def mrun(self, cmds, timeout=30, auto_close=True, encoding=None,
+             expected_pattern=0, unexpected_pattern=0, filter=0, **kwargs):
         r"""Execute many commands at the same time
 
         Runs a dictionary of commands at the specified prompt and then close the
@@ -1685,7 +1689,7 @@ class Ssh(object):
             cmds = list(cmds.items())
         for k, cmd in cmds:
             try:
-                out = self._run_cmd(cmd, timeout=timeout)
+                out = self._run_cmd(cmd, timeout=timeout, encoding=encoding)
                 if k:
                     dct[k] = _filter_result(out, k, cmd,
                                             expected_pattern
@@ -1709,7 +1713,7 @@ class Ssh(object):
             self.close()
         return dct
 
-    def mrun_channels(self, cmds, timeout=30, auto_close=True):
+    def mrun_channels(self, cmds, timeout=30, auto_close=True, encoding=None):
         r"""Execute many commands at the same time
 
         Runs a dictionary of commands at the specified prompt and then close the connection.
@@ -1762,7 +1766,8 @@ class Ssh(object):
             cmds = cmds.items()
         for k,cmd in cmds:
             try:
-                out, err, status = self._run_cmd_channels(cmd,timeout=timeout)
+                out, err, status = self._run_cmd_channels(cmd,timeout=timeout,
+                                                          encoding=encoding)
                 if k:
                     dct[k] = { 'out':out, 'err':err, 'status':status }
             except socket.timeout:
@@ -1914,7 +1919,7 @@ class Snmp(object):
     def __init__(self, host, community='public', version=None, timeout=30,
                  port=161, user=None, auth_passwd=None, auth_protocol='',
                  priv_passwd=None, priv_protocol='',
-                 object_identity_to_string=True, *args, **kwargs):
+                 object_identity_to_string=True, encoding=None, *args, **kwargs):
         # import is done only on demand, because it takes some time
         from pysnmp.entity.rfc3413.oneliner import cmdgen
         from pysnmp.proto.api import v2c
@@ -1933,6 +1938,7 @@ class Snmp(object):
         self.ObjectIdentity = ObjectIdentity
         self.version = version
         self.object_identity_to_string = object_identity_to_string
+        self.encoding = encoding
         self.cmd_args = []
 
         if not version:
@@ -1966,8 +1972,9 @@ class Snmp(object):
         self.cmd_args.append(cmdgen.UdpTransportTarget(
             (host, port), timeout=timeout/3, retries=2))
 
-    def to_native_type(self, oval):
+    def to_native_type(self, oval, encoding=None):
         v2c = self.v2c
+        encoding = encoding or self.encoding
         if isinstance(oval, v2c.Integer):
             val = int(oval.prettyPrint())
         elif isinstance(oval, v2c.Integer32):
@@ -1983,9 +1990,9 @@ class Snmp(object):
         elif isinstance(oval, v2c.TimeTicks):
             val = int(oval.prettyPrint())
         elif isinstance(oval, v2c.OctetString):
-            val = textops.StrExt(oval.prettyPrint())
+            val = textops.StrExt(textops.decode_bytes(oval.asOctets(),encoding))
         elif isinstance(oval, v2c.IpAddress):
-            val = textops.StrExt(oval.prettyPrint())
+            val = textops.StrExt(oval)
         elif self.object_identity_to_string and \
                 isinstance(oval, self.ObjectIdentity):
             val = textops.StrExt(oval)
