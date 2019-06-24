@@ -9,15 +9,12 @@ Creation: 2015-07-07
 
 import re
 import socket
-import signal
 from addicted import NoAttr
 import textops
 import naghelp
 import time
 import subprocess
 import traceback
-import fcntl
-import errno
 import os
 from .tools import Timeout, TimeoutError
 import collections
@@ -157,9 +154,10 @@ def _raise_unexpected_result(result, key, cmd, help_str=''):
 
 
 def _filter_result(result, key, cmd, expected_pattern=r'\S',
-                   unexpected_pattern=None, filter=None):
-    if isinstance(filter, collections.Callable):
-        filtered = list(filter(result, key, cmd))
+                   unexpected_pattern=None, filter_func=None):
+
+    if isinstance(filter_func, collections.Callable):
+        filtered = filter_func(result, key, cmd)
         if filtered is not None:
             result = filtered
 
@@ -1329,6 +1327,8 @@ class Ssh(object):
             ``cmd`` is the command that generated the ``result`` and ``key``
             the key in the dictionary for ``mrun``, ``mget`` and ``mwalk``.
             By Default, there is no filter.
+        encoding: encoding to be used to decode bytes returned by the remote
+            commands execution. (Default : utf-8)
         add_stderr (bool): If True, the stderr will be added at the end of
             results (Default: True)
         port (int): port number to use (Default : 0 = 22)
@@ -1354,7 +1354,7 @@ class Ssh(object):
                  auto_accept_new_host=True,
                  prompt_pattern=None, get_pty=False, expected_pattern=r'\S',
                  unexpected_pattern=r'<timeout>',
-                 filter=None, add_stderr=True, *args, **kwargs):
+                 filter=None, encoding='utf-8', add_stderr=True, *args, **kwargs):
         # import is done only on demand, because it takes some little time
         import paramiko
         self.in_with = False
@@ -1364,6 +1364,7 @@ class Ssh(object):
         self.expected_pattern = expected_pattern
         self.unexpected_pattern = unexpected_pattern
         self.filter = filter
+        self.encoding = encoding
         self.add_stderr = add_stderr
         self.client = paramiko.SSHClient()
         self.scpclient = None
@@ -1421,7 +1422,7 @@ class Ssh(object):
             if self.add_stderr:
                 out += stderr.read()
             naghelp.debug_listing(out)
-            return out
+            return textops.decode_bytes(out,self.encoding)
         else:
             self.chan.send('%s\n' % cmd)
             out = self._read_to_prompt()
@@ -1434,13 +1435,14 @@ class Ssh(object):
             out = out.splitlines()[:-1]
             cmd_out = '\n'.join(out)
             naghelp.debug_listing(cmd_out)
-            return cmd_out
+            return textops.decode_bytes(cmd_out,self.encoding)
 
-    def _run_cmd_channels(self,cmd,timeout):
+    def _run_cmd_channels(self, cmd, timeout):
+        encoding = encoding or self.encoding
         naghelp.logger.debug('collect -> run_channels("%s") %s',cmd,naghelp.debug_caller())
         stdin, stdout, stderr = self.client.exec_command(cmd,timeout=timeout,get_pty=self.get_pty)
-        out = stdout.read()
-        err = stderr.read()
+        out = textops.decode_bytes(stdout.read(),self.encoding)
+        err = textops.decode_bytes(stderr.read(),self.encoding)
         status = stdout.channel.recv_exit_status()
         naghelp.debug_listing(out + err)
         return out, err, status
@@ -1614,8 +1616,8 @@ class Ssh(object):
             self.scpclient = SCPClient(self.client.get_transport())
         return self.scpclient.put(*args, **kwargs)
 
-    def mrun(self, cmds, timeout=30, auto_close=True, expected_pattern=0,
-             unexpected_pattern=0, filter=0, **kwargs):
+    def mrun(self, cmds, timeout=30, auto_close=True,
+             expected_pattern=0, unexpected_pattern=0, filter=0, **kwargs):
         r"""Execute many commands at the same time
 
         Runs a dictionary of commands at the specified prompt and then close the
@@ -1914,7 +1916,7 @@ class Snmp(object):
     def __init__(self, host, community='public', version=None, timeout=30,
                  port=161, user=None, auth_passwd=None, auth_protocol='',
                  priv_passwd=None, priv_protocol='',
-                 object_identity_to_string=True, *args, **kwargs):
+                 object_identity_to_string=True, encoding='utf-8', *args, **kwargs):
         # import is done only on demand, because it takes some time
         from pysnmp.entity.rfc3413.oneliner import cmdgen
         from pysnmp.proto.api import v2c
@@ -1933,6 +1935,7 @@ class Snmp(object):
         self.ObjectIdentity = ObjectIdentity
         self.version = version
         self.object_identity_to_string = object_identity_to_string
+        self.encoding = encoding
         self.cmd_args = []
 
         if not version:
@@ -1983,9 +1986,9 @@ class Snmp(object):
         elif isinstance(oval, v2c.TimeTicks):
             val = int(oval.prettyPrint())
         elif isinstance(oval, v2c.OctetString):
-            val = textops.StrExt(oval.prettyPrint())
+            val = textops.StrExt(textops.decode_bytes(oval.asOctets(),self.encoding))
         elif isinstance(oval, v2c.IpAddress):
-            val = textops.StrExt(oval.prettyPrint())
+            val = textops.StrExt(oval)
         elif self.object_identity_to_string and \
                 isinstance(oval, self.ObjectIdentity):
             val = textops.StrExt(oval)
@@ -2376,9 +2379,23 @@ class Http(object):
 
     Args:
 
-        host (str): IP address or hostname to connect to
-        port (int): port number to use (Default : 80 TCP)
-        timeout (int): Time in seconds before raising an error or a None value
+        expected_pattern (str or regex): raise UnexpectedResultError if the
+            pattern is not found in methods that collect data (like run,
+            mrun, get, mget, walk, mwalk...). If None, there is no test.
+            By default, tests the result is not empty.
+        unexpected_pattern (str or regex): raise UnexpectedResultError if the
+            pattern is found. If None, there is no test.
+            By default, it tests <timeout>.
+        filter (callable): call a filter function with ``result, key, cmd``
+            parameters.
+            The function should return the modified result (if there is no
+            return statement, the original result is used).
+            The filter function is also the place to do some other checks:
+            ``cmd`` is the command that generated the ``result`` and ``key``
+            the key in the dictionary for ``mrun``, ``mget`` and ``mwalk``.
+            By Default, there is no filter.
+        encoding: encoding to be used to decode bytes returned by the remote
+            commands execution. (Default : utf-8)
     """
     def __init__(self, expected_pattern=r'\S', unexpected_pattern=r'<timeout>',
                  filter=None, *args, **kwargs):
