@@ -32,7 +32,7 @@ A naghelp plugin is a python class, a Nagios plugin is a script.
 To build a Nagios plugin from a naghelp plugin, you just have to instantiate a
 naghelp plugin class and call the ``run()`` method::
 
-   #!/usr/bin/python
+   #!/usr/bin/env python
 
    from naghelp import *
 
@@ -106,7 +106,7 @@ In order to understand how to code a plugin, let's take the plugin from the
 The plugin class is included into a python scripts (let's say
 ``linux_fs_full_plugin.py``) that will be executed by Nagios directly::
 
-   #!/usr/bin/python
+   #!/usr/bin/env python
    from naghelp import *
    from textops import *
 
@@ -139,7 +139,7 @@ Python interpreter
 
 .. code::
 
-   #!/usr/bin/python
+   #!/usr/bin/env python
 
 The first line tells what python interpreter have to run the script. Above we supposed that naghelp
 has been install system-wide.
@@ -601,7 +601,7 @@ the Nagios commands.cfg will be something like this::
 
 You just have to write a launcher once, naghelp provide a module for that, here is the ``pypa`` script::
 
-   #!/usr/bin/python
+   #!/usr/bin/env python
    # change python interpreter if your are using virtualenv or buildout
 
    from plugin_commons import MyProjectActivePlugin
