@@ -1987,7 +1987,8 @@ class Snmp(object):
             elif isinstance(oval, v2c.TimeTicks):
                 val = int(oval.prettyPrint())
             elif isinstance(oval, v2c.OctetString):
-                val = textops.BytesExt(oval)
+                # prettyPrint takes care to translate any kind of bytes (hex value, IP etc...)
+                val = textops.StrExt(oval.prettyPrint())
             elif isinstance(oval, v2c.IpAddress):
                 val = textops.StrExt(oval)
             elif self.object_identity_to_string and \
