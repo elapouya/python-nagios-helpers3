@@ -1948,9 +1948,9 @@ class Snmp(object):
         elif version == 3:
             auth_protocol = None
             priv_protocol = None
-            if auth_passwd and auth_protocol.lower() == 'sha':
+            if auth_passwd and auth_protocol and auth_protocol.lower() == 'sha':
                 auth_protocol = cmdgen.usmHMACSHAAuthProtocol
-            if priv_passwd and priv_protocol.lower() == 'aes':
+            if priv_passwd and priv_protocol and priv_protocol.lower() == 'aes':
                 priv_protocol = cmdgen.usmAesCfb128Protocol
             if not auth_passwd:
                 auth_passwd = None
