@@ -1948,9 +1948,9 @@ class Snmp(object):
         elif version == 3:
             auth_protocol = None
             priv_protocol = None
-            if auth_passwd and auth_protocol and auth_protocol.lower() == 'sha':
+            if auth_passwd and auth_protocol.lower() == 'sha':
                 auth_protocol = cmdgen.usmHMACSHAAuthProtocol
-            if priv_passwd and priv_protocol and priv_protocol.lower() == 'aes':
+            if priv_passwd and priv_protocol.lower() == 'aes':
                 priv_protocol = cmdgen.usmAesCfb128Protocol
             if not auth_passwd:
                 auth_passwd = None
@@ -1971,29 +1971,32 @@ class Snmp(object):
 
     def to_native_type(self, oval):
         v2c = self.v2c
-        if isinstance(oval, v2c.Integer):
-            val = int(oval.prettyPrint())
-        elif isinstance(oval, v2c.Integer32):
-            val = int(oval.prettyPrint())
-        elif isinstance(oval, v2c.Unsigned32):
-            val = int(oval.prettyPrint())
-        elif isinstance(oval, v2c.Counter32):
-            val = int(oval.prettyPrint())
-        elif isinstance(oval, v2c.Counter64):
-            val = int(oval.prettyPrint())
-        elif isinstance(oval, v2c.Gauge32):
-            val = int(oval.prettyPrint())
-        elif isinstance(oval, v2c.TimeTicks):
-            val = int(oval.prettyPrint())
-        elif isinstance(oval, v2c.OctetString):
-            val = textops.BytesExt(oval)
-        elif isinstance(oval, v2c.IpAddress):
+        try:
+            if isinstance(oval, v2c.Integer):
+                val = int(oval.prettyPrint())
+            elif isinstance(oval, v2c.Integer32):
+                val = int(oval.prettyPrint())
+            elif isinstance(oval, v2c.Unsigned32):
+                val = int(oval.prettyPrint())
+            elif isinstance(oval, v2c.Counter32):
+                val = int(oval.prettyPrint())
+            elif isinstance(oval, v2c.Counter64):
+                val = int(oval.prettyPrint())
+            elif isinstance(oval, v2c.Gauge32):
+                val = int(oval.prettyPrint())
+            elif isinstance(oval, v2c.TimeTicks):
+                val = int(oval.prettyPrint())
+            elif isinstance(oval, v2c.OctetString):
+                val = textops.BytesExt(oval)
+            elif isinstance(oval, v2c.IpAddress):
+                val = textops.StrExt(oval)
+            elif self.object_identity_to_string and \
+                    isinstance(oval, self.ObjectIdentity):
+                val = textops.StrExt(oval)
+            else:
+                val = oval
+        except ValueError:
             val = textops.StrExt(oval)
-        elif self.object_identity_to_string and \
-                isinstance(oval, self.ObjectIdentity):
-            val = textops.StrExt(oval)
-        else:
-            val = oval
         return val
 
     def normalize_oid(self, oid):
