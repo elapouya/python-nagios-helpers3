@@ -60,7 +60,7 @@ def launch(plugin_base_class):
     This function has to be used in a launcher script you may want to write to start a class
     as a Nagios plugin, here is a an example::
 
-        #!/usr/bin/python
+        #!/usr/bin/env python
         # change python interpreter if your are using virtualenv or buildout
 
         from plugin_commons import MyProjectActivePlugin
