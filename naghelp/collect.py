@@ -1438,7 +1438,6 @@ class Ssh(object):
             return textops.decode_bytes(cmd_out,self.encoding)
 
     def _run_cmd_channels(self, cmd, timeout):
-        encoding = encoding or self.encoding
         naghelp.logger.debug('collect -> run_channels("%s") %s',cmd,naghelp.debug_caller())
         stdin, stdout, stderr = self.client.exec_command(cmd,timeout=timeout,get_pty=self.get_pty)
         out = textops.decode_bytes(stdout.read(),self.encoding)
