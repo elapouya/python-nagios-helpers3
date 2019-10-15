@@ -496,7 +496,7 @@ def mrunshex(cmds, context={}, cmd_timeout=30, total_timeout=60,
 
 
 def debug_pattern_list(pat_list):
-    return [(pat if isinstance(pat, str) else pat.pattern) for pat in pat_list]
+    return [(pat if isinstance(pat, (str,bytes)) else pat.pattern) for pat in pat_list]
 
 
 class Expect(object):
@@ -1086,9 +1086,9 @@ class Telnet(object):
     @staticmethod
     def _normalize_pattern(pattern, default):
         if pattern is None:
-            pattern = [re.compile(default, re.I)]
+            pattern = [re.compile(default.encode(), re.I)]
         elif isinstance(pattern, str):
-            pattern = [re.sub(r'^\^', r'[\r\n]', pattern)]
+            pattern = [re.sub(rb'^\^', rb'[\r\n]', pattern.encode())]
         elif not isinstance(pattern, list):
             pattern = [pattern]
         return pattern
@@ -1114,18 +1114,19 @@ class Telnet(object):
         naghelp.logger.debug('collect -> run("%s") %s',
                              cmd, naghelp.debug_caller())
         time.sleep(self.sleep)
-        self.tn.write('%s\n' % cmd)
+        self.tn.write(b'%s\n' % cmd)
         naghelp.logger.debug('collect -> <-- expect(%s) ...',
                              debug_pattern_list(self.prompt_pattern))
         time.sleep(self.sleep)
         pat_id, m, buffer = self.tn.expect(self.prompt_pattern)
-        out = buffer.replace('\r', '')
+        out = buffer.replace(b'\r', b'')
         # use re.compile to be compatible with python 2.6 (flags in re.sub only for python 2.7+)
-        rm_cmd = re.compile(r'^.*?%s\n*' % cmd, re.DOTALL)
-        out = rm_cmd.sub('', out)
+        rm_cmd = re.compile(rb'^.*?%s\n*' % cmd, re.DOTALL)
+        out = rm_cmd.sub(b'', out)
         # remove cmd and prompt (first and last line)
         out = out.splitlines()[:-1]
-        cmd_out = '\n'.join(out)
+        cmd_out = b'\n'.join(out)
+        cmd_out = cmd_out.decode()
         naghelp.debug_listing(cmd_out)
         return cmd_out
 
