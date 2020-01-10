@@ -1950,14 +1950,12 @@ class Snmp(object):
                 auth_protocol = cmdgen.usmHMACSHAAuthProtocol
             if priv_passwd and priv_protocol.lower() == 'aes':
                 priv_protocol = cmdgen.usmAesCfb128Protocol
-            if not auth_passwd:
-                auth_passwd = None
-            if not priv_passwd:
-                priv_passwd = None
             if not user:
                 raise ConnectionError('user must be not empty')
             self.cmd_args.append(cmdgen.UsmUserData(
-                user, auth_passwd, priv_passwd,
+                user,
+                auth_passwd or None,
+                priv_passwd or None,
                 authProtocol=auth_protocol or None,
                 privProtocol=priv_protocol or None))
         else:
