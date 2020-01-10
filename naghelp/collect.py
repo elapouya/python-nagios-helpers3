@@ -1946,8 +1946,6 @@ class Snmp(object):
         elif version in [2, '2c']:
             self.cmd_args.append(cmdgen.CommunityData(community))
         elif version == 3:
-            auth_protocol = None
-            priv_protocol = None
             if auth_passwd and auth_protocol.lower() == 'sha':
                 auth_protocol = cmdgen.usmHMACSHAAuthProtocol
             if priv_passwd and priv_protocol.lower() == 'aes':
@@ -1960,8 +1958,8 @@ class Snmp(object):
                 raise ConnectionError('user must be not empty')
             self.cmd_args.append(cmdgen.UsmUserData(
                 user, auth_passwd, priv_passwd,
-                authProtocol=auth_protocol,
-                privProtocol=priv_protocol))
+                authProtocol=auth_protocol or None,
+                privProtocol=priv_protocol or None))
         else:
             raise ConnectionError('Bad snmp version protocol, given: '
                                   '%s, possible : 1,2,2c,3' % version)
