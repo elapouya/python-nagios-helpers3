@@ -420,7 +420,7 @@ class HostsManagerMixin(object):
         self.save_data(self.get_managed_data_filename(),self.managed_data)
 
     def get_managed_nagios_states(self):
-        return dict([(srv.host_name,int(srv.get_current_status().current_state)) for srv in self.pynag_model.Service.objects.filter(service_description=self.managed_service_description)])
+        return dict([(srv.host_name,int(srv.get_current_status().get('current_state'))) for srv in self.pynag_model.Service.objects.filter(service_description=self.managed_service_description)])
 
     def init_managed_hosts(self,data):
         self.managed_responses = {}
