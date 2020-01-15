@@ -1408,7 +1408,7 @@ class Ssh(object):
                 'collect -> #### Ssh: Connection closed ###############')
 
     def _read_to_prompt(self):
-        buff = ''
+        buff = b''
         while not self.prompt_pattern.search(buff):
             buff += self.chan.recv(8192)
         return textops.decode_bytes(buff,self.encoding)
