@@ -1360,7 +1360,7 @@ class Ssh(object):
         import paramiko
         self.in_with = False
         self.is_connected = False
-        self.prompt_pattern = prompt_pattern
+        self.prompt_pattern = bytes(prompt_pattern,encoding)
         self.get_pty = get_pty
         self.expected_pattern = expected_pattern
         self.unexpected_pattern = unexpected_pattern
@@ -1382,8 +1382,8 @@ class Ssh(object):
             self.client.connect(host, username=user, password=password,
                                 timeout=timeout, **kwargs)
             if self.prompt_pattern:
-                self.prompt_pattern = re.compile(re.sub(r'^\^', r'[\r\n]',
-                                                        prompt_pattern))
+                self.prompt_pattern = re.compile(re.sub(rb'^\^', rb'[\r\n]',
+                                                        self.prompt_pattern))
                 self.chan = self.client.invoke_shell(width=160, height=48)
                 self.chan.settimeout(timeout)
                 self._read_to_prompt()
@@ -1411,7 +1411,7 @@ class Ssh(object):
         buff = ''
         while not self.prompt_pattern.search(buff):
             buff += self.chan.recv(8192)
-        return buff
+        return textops.decode_bytes(buff,self.encoding)
 
     def _run_cmd(self, cmd, timeout):
         naghelp.logger.debug('collect -> run("%s") %s',
@@ -1422,8 +1422,9 @@ class Ssh(object):
             out = stdout.read()
             if self.add_stderr:
                 out += stderr.read()
+            out = textops.decode_bytes(out,self.encoding)
             naghelp.debug_listing(out)
-            return textops.decode_bytes(out,self.encoding)
+            return out
         else:
             self.chan.send('%s\n' % cmd)
             out = self._read_to_prompt()
@@ -1436,7 +1437,7 @@ class Ssh(object):
             out = out.splitlines()[:-1]
             cmd_out = '\n'.join(out)
             naghelp.debug_listing(cmd_out)
-            return textops.decode_bytes(cmd_out,self.encoding)
+            return cmd_out
 
     def _run_cmd_channels(self, cmd, timeout):
         naghelp.logger.debug('collect -> run_channels("%s") %s',cmd,naghelp.debug_caller())
