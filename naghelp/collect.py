@@ -1360,7 +1360,9 @@ class Ssh(object):
         import paramiko
         self.in_with = False
         self.is_connected = False
-        self.prompt_pattern = bytes(prompt_pattern,encoding)
+        self.prompt_pattern = ( bytes(prompt_pattern,encoding)
+                                if isinstance(prompt_pattern,str)
+                                else prompt_pattern )
         self.get_pty = get_pty
         self.expected_pattern = expected_pattern
         self.unexpected_pattern = unexpected_pattern
@@ -1382,8 +1384,9 @@ class Ssh(object):
             self.client.connect(host, username=user, password=password,
                                 timeout=timeout, **kwargs)
             if self.prompt_pattern:
-                self.prompt_pattern = re.compile(re.sub(rb'^\^', rb'[\r\n]',
-                                                        self.prompt_pattern))
+                if isinstance(self.prompt_pattern, bytes):
+                    self.prompt_pattern = re.compile(re.sub(rb'^\^', rb'[\r\n]',
+                                                    self.prompt_pattern))
                 self.chan = self.client.invoke_shell(width=160, height=48)
                 self.chan.settimeout(timeout)
                 self._read_to_prompt()
