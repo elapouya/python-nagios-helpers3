@@ -500,7 +500,7 @@ def debug_pattern_list(pat_list):
 
 
 class Expect(object):
-    """Interact with a spawn command
+    r"""Interact with a spawn command
 
     :class:`Expect` is a class that "talks" to other interactive programs.
     It is based on `pexpect <https://pexpect.readthedocs.org>`_ and is
@@ -787,7 +787,7 @@ class Expect(object):
 
     def run(self, cmd=None, timeout=30, auto_close=True, expected_pattern=0,
             unexpected_pattern=0, filter=0, **kwargs):
-        """Execute one command
+        r"""Execute one command
 
         Runs a single command at the specified prompt and then close the
         interaction. Timeout will not raise any error but will return None.
@@ -872,7 +872,7 @@ class Expect(object):
 
     def mrun(self, cmds, timeout=30, auto_close=True, expected_pattern=0,
              unexpected_pattern=0, filter=0, **kwargs):
-        """Execute many commands at the same time
+        r"""Execute many commands at the same time
 
         Runs a dictionary of commands at the specified prompt and then close the
         interaction. Timeout will not raise any error but will return None for
@@ -967,7 +967,7 @@ class Expect(object):
 
 
 class Telnet(object):
-    """Telnet class helper
+    r"""Telnet class helper
 
     This class create a telnet connection in order to run one or many commands.
 
@@ -2653,7 +2653,7 @@ class Winrm(object):
                              'std_out = [%s] ' %
                              (str(status_code), str(std_err), str(std_out)))
         if status_code == 0:
-            lst_lecteurs = std_out.split() | textops.grepi('^\w{1}:').tolist()
+            lst_lecteurs = std_out.split() | textops.grepi(r'^\w{1}:').tolist()
             # sort usable readers
             for lecteur in lst_lecteurs:
                 self.cmd = ('fsutil fsinfo', ['drivetype', lecteur])
@@ -2752,7 +2752,7 @@ class Winrm(object):
         return std_out, status_code
 
     def exec_file(self, fileexe, arg, prefrep=''):
-        """run file.exe with the argument anywhere is the file.exe
+        r"""run file.exe with the argument anywhere is the file.exe
         *arg* is str - *exemple*  '"{repexe}\conrep.exe" -s'"""
         naghelp.logger.debug(
             '(collect.winrm.exec_file)--->   '
