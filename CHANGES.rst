@@ -1,3 +1,7 @@
+3.0.2 (2021-12-14)
+------------------
+Fix collect.Snmp for md5 auth protocol
+
 3.0.1 (2019-02-06)
 ------------------
 Add run_channels() method to Ssh class

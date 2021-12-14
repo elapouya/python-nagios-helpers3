@@ -1950,10 +1950,16 @@ class Snmp(object):
         elif version in [2, '2c']:
             self.cmd_args.append(cmdgen.CommunityData(community))
         elif version == 3:
-            if auth_passwd and auth_protocol.lower() == 'sha':
-                auth_protocol = cmdgen.usmHMACSHAAuthProtocol
-            if priv_passwd and priv_protocol.lower() == 'aes':
-                priv_protocol = cmdgen.usmAesCfb128Protocol
+            if auth_passwd:
+                if auth_protocol.lower() == 'sha':
+                    auth_protocol = cmdgen.usmHMACSHAAuthProtocol
+                else:
+                    auth_protocol = None  # use default protocol
+            if priv_passwd:
+                if priv_protocol.lower() == 'aes':
+                    priv_protocol = cmdgen.usmAesCfb128Protocol
+                else:
+                    priv_protocol = None  # use default protocol
             if not user:
                 raise ConnectionError('user must be not empty')
             self.cmd_args.append(cmdgen.UsmUserData(
