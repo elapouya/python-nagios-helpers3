@@ -156,7 +156,7 @@ def _raise_unexpected_result(result, key, cmd, help_str=''):
 def _filter_result(result, key, cmd, expected_pattern=r'\S',
                    unexpected_pattern=None, filter_func=None):
 
-    if isinstance(filter_func, collections.Callable):
+    if isinstance(filter_func, collections.abc.Callable):
         filtered = filter_func(result, key, cmd)
         if filtered is not None:
             result = filtered
@@ -1881,7 +1881,7 @@ class Sftp(object):
 
     def __getattr__(self, attr):
         meth = getattr(self.sftp, attr, None)
-        if isinstance(meth, collections.Callable):
+        if isinstance(meth, collections.abc.Callable):
             if not self.is_connected:
                 raise NotConnected('No sftp connection to run your command.')
             return meth
@@ -2302,8 +2302,8 @@ class Snmp(object):
         Example:
 
             >>> snmp = Snmp('demo.snmplabs.com')
-            >>> print(snmp.mget({'uname':'1.3.6.1.2.1.1.0',)
-            >>>                  'other':'1.3.6.1.2.1.1.2-9.0'})
+            >>> print(snmp.mget({'uname': '1.3.6.1.2.1.1.0',
+            >>>                  'other': '1.3.6.1.2.1.1.2-9.0'})
             {'uname' : 'SunOS zeus.snmplabs.com 4.1.3_U1 1 sun4m',
              'other' : ['value for 1.3.6.1.2.1.1.2.0',
                         'value for 1.3.6.1.2.1.1.3.0', etc... ] }
