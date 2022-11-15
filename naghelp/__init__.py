@@ -47,7 +47,7 @@ def debug_caller():
         stack = list(reversed(traceback.extract_stack()))
         for file_name, line, func_name, func_line in stack:
             if '/naghelp/' not in file_name:
-                return '[%s:%s]'.format(file_name, line)
+                return '[{}:{}]'.format(file_name, line)
     return ''
 
 
