@@ -5,6 +5,7 @@ locally.
 Creation: 2015-07-07
 
 @author: Eric Lapouyade
+update for pysnmp7 : Jean Pinguet 25/10/2024
 """
 
 import re
@@ -18,6 +19,8 @@ import traceback
 import os
 from .tools import Timeout, TimeoutError
 import collections
+import asyncio
+from pysnmp.hlapi.asyncio import SnmpEngine
 
 __all__ = ['search_invalid_port', 'is_ping_ok', 'runsh', 'runshex', 'mrunsh',
            'mrunshex', 'Expect', 'Telnet', 'Ssh', 'Sftp', 'Snmp', 'Http',
@@ -34,6 +37,14 @@ class CollectError(Exception):
     """
     pass
 
+class MibError(CollectError):
+    """
+    Exception raised when a collect is unsuccessful
+
+    It may come from internal error from libraries pexpect / telnetlib / pysnmp.
+    This includes some internal timeout exception.
+    """
+    pass
 
 class SnmpWalkError(Exception):
     """Exception raised when Snmp.walk() failed
@@ -1917,63 +1928,96 @@ class Snmp(object):
         priv_passwd (str): snmp v3 privacy password
         priv_protocol (str): snmp v3 privacy protocol ('des' or 'aes')
     """
-    def __init__(self, host, community='public', version=None, timeout=30,
-                 port=161, user=None, auth_passwd=None, auth_protocol='',
-                 priv_passwd=None, priv_protocol='',
-                 object_identity_to_string=True, encoding='utf-8', *args, **kwargs):
-        # import is done only on demand, because it takes some time
-        from pysnmp.entity.rfc3413.oneliner import cmdgen
-        from pysnmp.proto.api import v2c
-        from pysnmp.smi.exval import noSuchInstance
-        from pysnmp.smi.rfc1902 import ObjectIdentity
-        from pysnmp.hlapi.context import ContextData
-        from pyasn1.compat.octets import null
-        from pysnmp.hlapi.asyncore import sync
-        self.cmdgen = cmdgen
-        self.v2c = v2c
-        self.noSuchInstance = noSuchInstance
-        self.cmdGenerator = cmdgen.CommandGenerator()
-        self.ContextData = ContextData
-        self.null = null
-        self.sync = sync
-        self.ObjectIdentity = ObjectIdentity
-        self.version = version
-        self.object_identity_to_string = object_identity_to_string
-        self.encoding = encoding
-        self.cmd_args = []
 
+    def __init__(self,
+                 host,
+                 community='public',
+                 version=None,
+                 timeout=30,
+                 port=161,
+                 user=None,
+                 auth_passwd=None,
+                 auth_protocol='',
+                 priv_passwd=None,
+                 priv_protocol='',
+                 object_identity_to_string=True,
+                 encoding='utf-8',
+                 *args,
+                 **kwargs):
+
+        from pysnmp.hlapi.asyncio import (SnmpEngine,
+                                          CommunityData,
+                                          UdpTransportTarget,
+                                          ContextData,
+                                          ObjectType,
+                                          ObjectIdentity,
+                                          getCmd,
+                                          walkCmd
+                                          )
+        from pysnmp.proto import rfc1902 as rfc
+        from pysnmp.smi import builder, view
+
+        self.v2c = rfc
+        self.snmp_engine = SnmpEngine()
+        self.udp_transport_target = UdpTransportTarget
+        self.context_data = ContextData
+        self.object_type = ObjectType
+        self.object_identity = ObjectIdentity
+        self.get_cmd = getCmd
+        self.builder = builder
+        self.view = view
+        self.walk_cmd = walkCmd
+
+        self.host = host  # Stocker l'IP
+        self.port = port  # Stocker le port
+        self.timeout = timeout  # Timeout configuré
+
+        self.object_identity_to_string = object_identity_to_string
+
+        # Configurer CommunityData selon la version choisie
         if not version:
             version = user and 3 or 2
 
-        if version == 1:
-            self.cmd_args.append(cmdgen.CommunityData(community, mpModel=0))
-        elif version in [2, '2c']:
-            self.cmd_args.append(cmdgen.CommunityData(community))
-        elif version == 3:
+        if version == '1':
+            self.connection = CommunityData(community, mpModel=0)  # SNMPv1 (mpModel=0)
+        elif version == '2c' or version == 2:
+            self.connection = CommunityData(community, mpModel=1)  # SNMPv2c (mpModel=1)
+        elif version == '3' or version == 3:
+            from pysnmp.hlapi.v3arch.asyncio import (USM_AUTH_HMAC96_SHA,
+                                                     USM_AUTH_HMAC96_MD5,
+                                                     USM_PRIV_CFB128_AES,
+                                                     UsmUserData,
+                                                     )
+            priv_proto = auth_proto = None
             if auth_passwd:
                 if auth_protocol.lower() == 'sha':
-                    auth_protocol = cmdgen.usmHMACSHAAuthProtocol
+                    auth_proto = USM_AUTH_HMAC96_SHA
+                if auth_protocol.lower() == 'md5':
+                    auth_proto = USM_AUTH_HMAC96_MD5
                 else:
-                    auth_protocol = None  # use default protocol
+                    auth_proto = None  # use default protocol
+
             if priv_passwd:
                 if priv_protocol.lower() == 'aes':
-                    priv_protocol = cmdgen.usmAesCfb128Protocol
+                    priv_proto = USM_PRIV_CFB128_AES
                 else:
-                    priv_protocol = None  # use default protocol
+                    priv_proto = None  # use default protocol
+
             if not user:
                 raise ConnectionError('user must be not empty')
-            self.cmd_args.append(cmdgen.UsmUserData(
+            if not isinstance(user, str):
+                raise ConnectionError('user must be a string')
+
+            self.connection = UsmUserData(
                 user,
                 auth_passwd or None,
                 priv_passwd or None,
-                authProtocol=auth_protocol or None,
-                privProtocol=priv_protocol or None))
+                authProtocol=auth_proto,
+                privProtocol=priv_proto,
+            )
         else:
             raise ConnectionError('Bad snmp version protocol, given: '
                                   '%s, possible : 1,2,2c,3' % version)
-
-        self.cmd_args.append(cmdgen.UdpTransportTarget(
-            (host, port), timeout=timeout/3, retries=2))
 
     def to_native_type(self, oval):
         v2c = self.v2c
@@ -1998,7 +2042,7 @@ class Snmp(object):
             elif isinstance(oval, v2c.IpAddress):
                 val = textops.StrExt(oval)
             elif self.object_identity_to_string and \
-                    isinstance(oval, self.ObjectIdentity):
+                    isinstance(oval, self.object_identity):
                 val = textops.StrExt(oval)
             else:
                 val = oval
@@ -2030,10 +2074,28 @@ class Snmp(object):
 
         """
         if isinstance(oid, tuple):
-            return self.cmdgen.MibVariable(*oid)
+
+            if len(oid) == 3:
+                suff = oid[2]
+                oid = oid[:2]
+                mib = oid[0]
+
+                if mib:
+                    mibBuilder = builder.MibBuilder()
+                    mibBuilder.addMibSources(builder.DirMibSource('/home/jean/.pysnmp/mibs'))
+                    try:
+                        mibBuilder.loadModules(mib)
+                    except Exception as e:
+                        raise MibError(f"Erreur lors du chargement de la MIB : {e}")
+
+                    oid_numeric = mibBuilder.importSymbols(*oid)[0].getName() + (suff,)
+                    return '.'.join(map(str, oid_numeric))
         return oid
 
     def get(self, oid_or_mibvar):
+        return asyncio.run(self.get_oid(oid_or_mibvar))
+
+    async def get_oid(self, oid_or_mibvar):
         """get one OID
 
         Args:
@@ -2067,51 +2129,33 @@ class Snmp(object):
                 >>> snmp.get(('SNMPv2-MIB', 'sysDescr', 0))
                 'SunOS zeus.snmplabs.com 4.1.3_U1 1 sun4m'
         """
-        naghelp.logger.debug('collect -> get(%s) %s',oid_or_mibvar,naghelp.debug_caller())
-        oid_or_mibvar = self.normalize_oid(oid_or_mibvar)
-        args = list(self.cmd_args)
-        args.append(oid_or_mibvar)
-        err_indication, err_status, err_index, var_binds = \
-            self.cmdGenerator.getCmd(*args)
-        if err_indication:
-            raise CollectError(err_indication)
+        oid = self.normalize_oid(oid_or_mibvar)
+
+        # Créer l'objet UdpTransportTarget avec create()
+        transport_target = await self.udp_transport_target.create((self.host, self.port), timeout=self.timeout,
+                                                                  retries=2)
+
+        # Appeler la commande SNMP avec les paramètres définis
+        errorIndication, errorStatus, errorIndex, var_binds = await self.get_cmd(
+            self.snmp_engine,
+            self.connection,
+            transport_target,
+            self.context_data(),
+            self.object_type(self.object_identity(oid))  # L'OID fourni par l'utilisateur
+        )
+
+        # Gestion des erreurs et résultats
+        if errorIndication:
+            raise CollectError(f"Error: {errorIndication}")
+        elif errorStatus:
+            raise CollectError(f"Error Status: {errorStatus.prettyPrint()} at {errorIndex}")
         else:
-            if err_status:
-                try:
-                    err_at = err_index and var_binds[int(err_index)-1] or '?'
-                except:
-                    err_at = '?'
-                raise CollectError('%s at %s' %
-                                   (err_status.prettyPrint(), err_at))
-        return self.to_native_type(var_binds[0][1])
-
-    def nextCmd(self, auth_data, transport_target, *var_names, **kwargs):
-        if 'lookupNames' not in kwargs:
-            kwargs['lookupNames'] = False
-        if 'lookupValues' not in kwargs:
-            kwargs['lookupValues'] = False
-        if 'lexicographicMode' not in kwargs:
-            kwargs['lexicographicMode'] = False
-        err_indication, err_status, err_index = None, 0, 0
-        var_bind_table = []
-        for err_indication, \
-                err_status, err_index, \
-                varBinds \
-                in self.sync.nextCmd(
-                    self.cmdGenerator.snmpEngine,
-                    auth_data, transport_target,
-                    self.ContextData(kwargs.get('contextEngineId'),
-                                     kwargs.get('contextName', self.null)),
-                    *[(x, self.cmdGenerator._null) for x in var_names],
-                    **kwargs):
-            if err_indication or err_status:
-                return err_indication, err_status, err_index, var_bind_table
-
-            var_bind_table.append(varBinds)
-
-        return err_indication, err_status, err_index, var_bind_table
+            return self.to_native_type(var_binds[0][1])
 
     def walk(self, oid_or_mibvar, ignore_errors=False):
+        return asyncio.run(self.walk_oid(oid_or_mibvar, ignore_errors=ignore_errors))
+
+    async def walk_oid(self, oid_or_mibvar, *, ignore_errors=False):
         """Walk from a OID root path
 
         Args:
@@ -2138,27 +2182,40 @@ class Snmp(object):
         """
         naghelp.logger.debug('collect -> walk(%s) %s',
                              oid_or_mibvar, naghelp.debug_caller())
-        oid_or_mibvar = self.normalize_oid(oid_or_mibvar)
+        oid = self.normalize_oid(oid_or_mibvar)
         lst = textops.ListExt()
-        args = list(self.cmd_args)
-        args.append(oid_or_mibvar)
-        err_indication, err_status, err_index, var_bind_table = \
-            self.nextCmd(*args)
-        for varBindTableRow in var_bind_table:
-            for name, val in varBindTableRow:
-                lst.append((str(name), self.to_native_type(val)))
-        if not ignore_errors:
-            if err_indication:
-                raise SnmpWalkError(lst, err_indication)
-            else:
-                if err_status:
+
+        snmp_engine = SnmpEngine()
+        # Créer l'objet UdpTransportTarget avec create()
+        transport_target = await self.udp_transport_target.create((self.host, self.port), timeout=self.timeout, retries=2)
+
+        async for (err_indication, err_status, err_index, var_binds) in self.walk_cmd(
+                # self.snmp_engine,
+                snmp_engine,
+                self.connection,
+                transport_target,
+                self.context_data(),
+                self.object_type(self.object_identity(oid)),  # L'OID fourni par l'utilisateur
+                lexicographicMode=False  # Arrêter lorsqu'on quitte le sous-arbre
+        ):
+
+            # Vérifier s'il y a une erreur
+            if not ignore_errors:
+                if err_indication:
+                    raise SnmpWalkError(lst, err_indication)
+
+                elif err_status:
                     try:
                         err_at = err_index and \
-                                 var_bind_table[-1][int(err_index) - 1] or '?'
+                                 var_binds[-1][int(err_index) - 1] or '?'
                     except:
                         err_at = '?'
                     raise SnmpWalkError(lst, '%s at %s' %
                                         (err_status.prettyPrint(), err_at))
+                else:
+                    lst.append((self.to_native_type(var_binds[0][0]), self.to_native_type(var_binds[0][1])))
+            else:
+                lst.append((self.to_native_type(var_binds[0][0]), self.to_native_type(var_binds[0][1])))
         return lst
 
     def mwalk(self, vars_oids, ignore_errors=False):
